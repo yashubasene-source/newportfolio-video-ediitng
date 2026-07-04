@@ -1,0 +1,6 @@
+{
+  "name": "Anshay Basene Portfolio",
+  "description": "Premium cinematic portfolio website for Anshay Basene, Video Editor & Graphic Designer, featuring a responsive dark mode layout, interactive pricing, before-after slider, and portfolio showcase.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

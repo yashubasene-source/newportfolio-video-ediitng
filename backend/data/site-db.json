@@ -1,0 +1,101 @@
+{
+  "hero": {
+    "statusText": "Available for Freelance Projects",
+    "titleNormal": "Cinematic",
+    "titleGradient": "Storytelling",
+    "titleSuffix": "& Bold Visuals.",
+    "description": "I craft cinematic stories and bold graphic designs—from high-impact political documentaries to modern brand identities. Based in Bhopal, working globally.",
+    "slotsText": "Only 2 client slots open this month",
+    "cvLink": "https://images.unsplash.com/photo-1586281380349-632531db7ed4?q=80&w=800",
+    "metric1Val": "50+",
+    "metric1Lbl": "Delivered",
+    "metric2Val": "3x",
+    "metric2Lbl": "Avg. CTR Boost",
+    "metric3Val": "24h",
+    "metric3Lbl": "Speed Edit"
+  },
+  "about": {
+    "title": "Turning Raw Footage Into Cinematic Art",
+    "bioParagraph1": "Hi, I'm Anshay Basene, a Video Editor and Graphic Designer from Bhopal, Madhya Pradesh. While currently pursuing my B.Tech degree (2nd Year), I work as a professional freelancer partnering with global content creators, real estate agents, and agencies.",
+    "bioParagraph2": "I specialize in political documentaries, narrative walkthroughs, and fast-paced typography animations where pacing, color grading depth, and audio pacing are crucial. Every single cut and pixel is placed with client-converting intent.",
+    "experience": "Active Professional Editor",
+    "education": "B.Tech — 2nd Year Student",
+    "availability": "Open for Freelance Work",
+    "location": "Bhopal, Madhya Pradesh",
+    "profileImage": "/assets/case-thumb-03.webp",
+    "locationStamp": "BHOPAL, IN — UTC+5:30",
+    "tags": [
+      "Color Correction",
+      "Kinetic Typography",
+      "Logo suites",
+      "VFX Motion",
+      "Sound Design",
+      "Brand Strategy"
+    ]
+  },
+  "contact": {
+    "headline": "Let's Cut to the Chase",
+    "subheadline": "Ready to make something unforgettable? Drop your details below or connect directly.",
+    "email": "yashubasene@gmail.com",
+    "phone": "+91 8319610243",
+    "instagramUrl": "https://instagram.com/anshay_basene",
+    "whatsappUrl": "https://wa.me/8319610243",
+    "location": "Bhopal, India (Working Globally)"
+  },
+  "progressions": [
+    {
+      "id": "prog1",
+      "niche": "realestate",
+      "label": "Real Estate",
+      "rawVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "editVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "sfxColorVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "finalVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    },
+    {
+      "id": "prog2",
+      "niche": "talkinghead",
+      "label": "Talking Head",
+      "rawVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "editVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "sfxColorVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "finalVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    },
+    {
+      "id": "prog3",
+      "niche": "event",
+      "label": "Event",
+      "rawVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "editVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "sfxColorVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "finalVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    },
+    {
+      "id": "prog4",
+      "niche": "food",
+      "label": "Food",
+      "rawVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "editVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "sfxColorVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "finalVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    },
+    {
+      "id": "prog5",
+      "niche": "motion",
+      "label": "Motion Graphics",
+      "rawVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "editVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "sfxColorVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "finalVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    },
+    {
+      "id": "prog6",
+      "niche": "educational",
+      "label": "Educational",
+      "rawVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "editVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "sfxColorVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+      "finalVideo": "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+    }
+  ]
+}
