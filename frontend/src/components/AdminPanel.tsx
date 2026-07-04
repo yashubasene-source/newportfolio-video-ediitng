@@ -143,6 +143,21 @@ export default function AdminPanel({
     }
   }, [siteConfig]);
 
+  // Dispatch custom events to pause/resume Lenis scrolling and lock document body scroll
+  useEffect(() => {
+    if (isOpen) {
+      window.dispatchEvent(new CustomEvent('modal-open'));
+      document.body.style.overflow = 'hidden';
+    } else {
+      window.dispatchEvent(new CustomEvent('modal-close'));
+      document.body.style.overflow = '';
+    }
+    return () => {
+      window.dispatchEvent(new CustomEvent('modal-close'));
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const playSound = (freq: number, dur = 0.05) => {
     if (!soundEnabled) return;
     try {
@@ -436,14 +451,14 @@ export default function AdminPanel({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md overflow-y-auto">
-      <div className="w-full max-w-5xl rounded-2xl border border-zinc-850 bg-[#08080c] shadow-2xl overflow-hidden flex flex-col my-8">
+    <div data-lenis-prevent className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md overflow-y-auto">
+      <div className="w-full max-w-5xl rounded-2xl border border-zinc-850 bg-[#08080c] shadow-2xl overflow-hidden flex flex-col my-4 sm:my-8 max-h-[92vh] md:max-h-[85vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-850 p-6 bg-zinc-950/60">
+        <div className="flex items-center justify-between border-b border-zinc-850 p-4 sm:p-6 bg-zinc-950/60">
           <div className="flex items-center gap-2">
             <Sparkles className="w-5 h-5" style={{ color: currentTheme.accentHex }} />
-            <h2 className="font-sans font-black text-lg text-white">Portfolio Command Center</h2>
+            <h2 className="font-sans font-black text-base sm:text-lg text-white">Portfolio Command Center</h2>
           </div>
           <button
             onClick={onClose}
@@ -488,13 +503,13 @@ export default function AdminPanel({
           </div>
         ) : (
           /* Unlocked Admin Panel Dashboard */
-          <div className="flex flex-col flex-1 max-h-[80vh]">
+          <div className="flex flex-col flex-1 min-h-0">
             
-            {/* Top Navigation Tabs */}
-            <div className="flex flex-wrap items-center gap-1.5 p-4 border-b border-zinc-900 bg-zinc-950/40">
+            {/* Top Navigation Tabs - Horizontally Scrollable on Mobile */}
+            <div className="flex flex-nowrap items-center gap-2 p-3 overflow-x-auto border-b border-zinc-900 bg-zinc-950/40 scrollbar-none">
               <button
                 onClick={() => { setActiveTab('projects'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer`}
+                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
                 style={
                   activeTab === 'projects'
                     ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
@@ -505,7 +520,7 @@ export default function AdminPanel({
               </button>
               <button
                 onClick={() => { setActiveTab('ai-upload'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer`}
+                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
                 style={
                   activeTab === 'ai-upload'
                     ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
@@ -516,7 +531,7 @@ export default function AdminPanel({
               </button>
               <button
                 onClick={() => { setActiveTab('local-upload'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer`}
+                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
                 style={
                   activeTab === 'local-upload'
                     ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
@@ -527,7 +542,7 @@ export default function AdminPanel({
               </button>
               <button
                 onClick={() => { setActiveTab('site-content'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer`}
+                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
                 style={
                   activeTab === 'site-content'
                     ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
@@ -538,7 +553,7 @@ export default function AdminPanel({
               </button>
               <button
                 onClick={() => { setActiveTab('settings'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer`}
+                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
                 style={
                   activeTab === 'settings'
                     ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
@@ -550,7 +565,7 @@ export default function AdminPanel({
             </div>
 
             {/* Main Content Area */}
-            <div className="p-6 md:p-8 overflow-y-auto flex-1">
+            <div data-lenis-prevent className="p-4 md:p-8 overflow-y-auto flex-1 min-h-0">
               
               {/* TAB 1: PROJECTS TIMELINE */}
               {activeTab === 'projects' && (
@@ -597,6 +612,13 @@ export default function AdminPanel({
                     onCancel={resetProjectForm}
                     currentTheme={currentTheme}
                     playSound={playSound}
+                    slotNumber={
+                      editingId
+                        ? projects
+                            .filter((p) => p.aspectRatio === aspectRatio)
+                            .findIndex((p) => p.id === editingId) + 1 || 1
+                        : 1
+                    }
                   />
 
                   <ProjectList
@@ -605,6 +627,7 @@ export default function AdminPanel({
                     onDelete={handleDelete}
                     onResetDefaults={onResetDefaults}
                     onExport={handleExport}
+                    onAddNew={resetProjectForm}
                     playSound={playSound}
                   />
                 </div>
@@ -723,7 +746,7 @@ export default function AdminPanel({
                     </div>
 
                     {/* Stats metrics */}
-                    <div className="grid grid-cols-3 gap-3 text-xs font-mono border-t border-zinc-900/60 pt-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono border-t border-zinc-900/60 pt-3">
                       <div className="grid grid-cols-2 gap-2">
                         <div className="flex flex-col gap-1">
                           <label className="text-[9px] text-zinc-500">Metric 1 Val</label>

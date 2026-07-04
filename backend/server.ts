@@ -230,6 +230,94 @@ async function startServer() {
     }
   });
 
+  // GET YouTube details for auto-filling project metadata
+  app.get("/api/youtube-details", async (req, res) => {
+    const { url } = req.query;
+    if (!url || typeof url !== "string") {
+      return res.status(400).json({ error: "URL query parameter is required" });
+    }
+
+    const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(youtubeRegExp);
+    if (!match || match[2].length !== 11) {
+      return res.status(400).json({ error: "Invalid YouTube URL format" });
+    }
+
+    const videoId = match[2];
+    const isShort = url.includes("/shorts/");
+    const aspectRatio = isShort ? "9:16" : "16:9";
+    const thumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+
+    let title = "";
+    let description = "";
+
+    // 1. Try to fetch oEmbed details
+    try {
+      const oembedRes = await fetch(`https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`);
+      if (oembedRes.ok) {
+        const oembedData: any = await oembedRes.json();
+        title = oembedData.title || "";
+      }
+    } catch (oembedErr) {
+      console.error("YouTube oEmbed fetch failed:", oembedErr);
+    }
+
+    // 2. Try to fetch video page HTML to scrape description
+    try {
+      const watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const response = await fetch(watchUrl, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+      });
+      if (response.ok) {
+        const html = await response.text();
+        const descMatch = html.match(/<meta\s+name="description"\s+content="([^"]*)"/i) || 
+                          html.match(/<meta\s+property="og:description"\s+content="([^"]*)"/i);
+        if (descMatch) {
+          description = descMatch[1]
+            .replace(/&quot;/g, '"')
+            .replace(/&amp;/g, '&')
+            .replace(/&lt;/g, '<')
+            .replace(/&gt;/g, '>')
+            .replace(/&#39;/g, "'");
+        }
+
+        if (!title) {
+          const titleMatch = html.match(/<meta\s+property="og:title"\s+content="([^"]*)"/i) ||
+                             html.match(/<title>([^<]*)<\/title>/i);
+          if (titleMatch) {
+            title = titleMatch[1].replace(" - YouTube", "").trim();
+          }
+        }
+      }
+    } catch (scrapeErr) {
+      console.error("YouTube HTML scrape failed:", scrapeErr);
+    }
+
+    // Clean description: remove hashtags, URLs, take first sentence, cap at 100 chars
+    if (description) {
+      description = description.replace(/#\w+/g, "").trim();
+      description = description.replace(/https?:\/\/[^\s]+/g, "").trim();
+      description = description.replace(/\s+/g, " ");
+      const sentences = description.split(/[.!?]\s/);
+      if (sentences.length > 0 && sentences[0].trim().length > 5) {
+        description = sentences[0].trim() + ".";
+      }
+      if (description.length > 100) {
+        description = description.substring(0, 97) + "...";
+      }
+    }
+
+    return res.json({
+      title: title || "YouTube Video",
+      description: description || "Cinematic video content.",
+      aspectRatio,
+      thumbnail,
+      type: "video"
+    });
+  });
+
   // POST AI Autofill Project Metadata
   app.post("/api/autofill", async (req, res) => {
     const { link, captionText, customApiKey } = req.body;

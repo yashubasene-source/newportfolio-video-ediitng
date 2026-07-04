@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { ProjectType, NicheType, ThemeColors } from '../../types';
 
 interface ProjectFormProps {
@@ -43,6 +43,7 @@ interface ProjectFormProps {
   onCancel: () => void;
   currentTheme: ThemeColors;
   playSound: (freq: number, dur?: number) => void;
+  slotNumber?: number;
 }
 
 export default function ProjectForm({
@@ -87,13 +88,46 @@ export default function ProjectForm({
   onCancel,
   currentTheme,
   playSound,
+  slotNumber,
 }: ProjectFormProps) {
+  const [isFetchingYoutube, setIsFetchingYoutube] = useState(false);
+
+  const handleLinkBlur = async (urlVal: string) => {
+    if (!urlVal) return;
+
+    const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = urlVal.match(youtubeRegExp);
+
+    if (match && match[2].length === 11) {
+      setIsFetchingYoutube(true);
+      playSound(450, 0.1);
+      try {
+        const response = await fetch(`/api/youtube-details?url=${encodeURIComponent(urlVal)}`);
+        if (response.ok) {
+          const data = await response.json();
+          if (data.title) setTitle(data.title);
+          if (data.description) setDescription(data.description);
+          if (data.aspectRatio) setAspectRatio(data.aspectRatio);
+          if (data.thumbnail) setThumbnail(data.thumbnail);
+          if (data.type) setType(data.type);
+          playSound(880, 0.2);
+        }
+      } catch (err) {
+        console.error("Auto YouTube fetch failed:", err);
+      } finally {
+        setIsFetchingYoutube(false);
+      }
+    }
+  };
+
   return (
     <div className="lg:col-span-5 flex flex-col gap-5 border-b lg:border-b-0 lg:border-r border-zinc-900 pb-8 lg:pb-0 lg:pr-8">
       <div>
         <p className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">PROJECT EDITOR</p>
         <h3 className="font-sans font-black text-sm text-white mt-0.5">
-          {editingId ? 'Edit Project Element' : 'Add New Portfolio Clip'}
+          {editingId 
+            ? `Edit Project - Slot #${slotNumber || '?'}` 
+            : `Add New Clip (Will be Slot #1)`}
         </h3>
       </div>
 
@@ -113,13 +147,21 @@ export default function ProjectForm({
 
         {/* Video Link */}
         <div className="flex flex-col gap-1">
-          <label className="text-zinc-500">Video Link / Embed URL (Required)</label>
+          <div className="flex justify-between items-center">
+            <label className="text-zinc-500">Video Link / Embed URL (Required)</label>
+            {isFetchingYoutube && (
+              <span className="text-[9px] text-zinc-400 animate-pulse font-mono flex items-center gap-1">
+                ⚡ AUTO-FETCHING YOUTUBE DETAILS...
+              </span>
+            )}
+          </div>
           <input
             type="text"
             required
             placeholder="Youtube, Instagram, or local /uploads/... path"
             value={link}
             onChange={(e) => setLink(e.target.value)}
+            onBlur={(e) => handleLinkBlur(e.target.value)}
             className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-700"
           />
         </div>
@@ -230,7 +272,7 @@ export default function ProjectForm({
         <div className="border-t border-zinc-900 pt-3 flex flex-col gap-2.5">
           <span className="text-[8px] font-mono text-zinc-600 uppercase tracking-widest block">ADVANCED FIELDS</span>
           
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <input
               type="text"
               placeholder="Client"
@@ -247,7 +289,7 @@ export default function ProjectForm({
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <input
               type="text"
               placeholder="Frame Rate"
@@ -279,7 +321,7 @@ export default function ProjectForm({
             className="px-2.5 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white text-[10px] resize-none font-sans"
           />
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <textarea
               rows={1.5}
               placeholder="Creative challenge..."
