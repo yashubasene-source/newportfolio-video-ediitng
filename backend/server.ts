@@ -1,3 +1,8 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
 import express from "express";
 import path from "path";
 import fs from "fs";
@@ -5,6 +10,7 @@ import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import multer from "multer";
 import { GoogleGenAI } from "@google/genai";
+import { MongoClient } from "mongodb";
 
 // Load local environment variables
 dotenv.config();
@@ -16,7 +22,7 @@ async function startServer() {
   // Support parsing JSON request bodies
   app.use(express.json());
 
-  // Paths updated for the restructured folder layout
+  // Local flat-file database paths as fallback
   const dbPath = path.join(process.cwd(), "backend", "data", "projects-db.json");
   const siteDbPath = path.join(process.cwd(), "backend", "data", "site-db.json");
   const uploadsDir = path.join(process.cwd(), "backend", "uploads");
@@ -26,7 +32,23 @@ async function startServer() {
     fs.mkdirSync(uploadsDir, { recursive: true });
   }
 
-  // Multer Storage Configuration (Dynamically stores in uploads/videos or uploads/reels)
+  // Cloud Database Integration (MongoDB Atlas) with local fallback
+  let db: any = null;
+  const MONGODB_URI = process.env.MONGODB_URI;
+
+  if (MONGODB_URI) {
+    try {
+      const client = await MongoClient.connect(MONGODB_URI);
+      db = client.db("portfolio");
+      console.log("Connected to MongoDB Atlas database successfully.");
+    } catch (err) {
+      console.error("Failed to connect to MongoDB, falling back to local files:", err);
+    }
+  } else {
+    console.log("No MONGODB_URI found. Operating in Local Flat-File Mode.");
+  }
+
+  // Multer Storage Configuration
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadType = (req.query.uploadType as string) || "video";
@@ -49,7 +71,7 @@ async function startServer() {
     limits: { fileSize: 100 * 1024 * 1024 } // 100MB video limit
   });
 
-  // Serve static uploads from the root uploads directory
+  // Serve static uploads
   app.use("/uploads", express.static(uploadsDir));
 
   // API Health route
@@ -58,14 +80,32 @@ async function startServer() {
   });
 
   // GET projects database content
-  app.get("/api/projects", (req, res) => {
+  app.get("/api/projects", async (req, res) => {
     try {
-      if (fs.existsSync(dbPath)) {
-        const raw = fs.readFileSync(dbPath, "utf-8");
-        const parsed = JSON.parse(raw);
-        return res.json(parsed);
+      if (db) {
+        const collection = db.collection("projects");
+        const doc = await collection.findOne({ key: "projects_list" });
+        if (doc) {
+          return res.json(doc.data);
+        } else {
+          // If empty in cloud database, seed it from local projects-db.json file
+          let localData: any[] = [];
+          if (fs.existsSync(dbPath)) {
+            const raw = fs.readFileSync(dbPath, "utf-8");
+            localData = JSON.parse(raw);
+          }
+          await collection.insertOne({ key: "projects_list", data: localData });
+          return res.json(localData);
+        }
       } else {
-        return res.status(404).json({ error: "Database file not found" });
+        // Local File fallback
+        if (fs.existsSync(dbPath)) {
+          const raw = fs.readFileSync(dbPath, "utf-8");
+          const parsed = JSON.parse(raw);
+          return res.json(parsed);
+        } else {
+          return res.status(404).json({ error: "Database file not found" });
+        }
       }
     } catch (error: any) {
       return res.status(500).json({ error: error.message || "Failed to read database" });
@@ -73,14 +113,24 @@ async function startServer() {
   });
 
   // POST update projects list
-  app.post("/api/projects", (req, res) => {
+  app.post("/api/projects", async (req, res) => {
     try {
       const updatedProjects = req.body;
       if (!Array.isArray(updatedProjects)) {
         return res.status(400).json({ error: "Invalid data format. Expected an array of projects." });
       }
 
-      fs.writeFileSync(dbPath, JSON.stringify(updatedProjects, null, 2), "utf-8");
+      if (db) {
+        const collection = db.collection("projects");
+        await collection.updateOne(
+          { key: "projects_list" },
+          { $set: { data: updatedProjects } },
+          { upsert: true }
+        );
+      } else {
+        // Local File fallback
+        fs.writeFileSync(dbPath, JSON.stringify(updatedProjects, null, 2), "utf-8");
+      }
       return res.json({ status: "success", count: updatedProjects.length });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || "Failed to save database" });
@@ -88,14 +138,32 @@ async function startServer() {
   });
 
   // GET site database content
-  app.get("/api/site", (req, res) => {
+  app.get("/api/site", async (req, res) => {
     try {
-      if (fs.existsSync(siteDbPath)) {
-        const raw = fs.readFileSync(siteDbPath, "utf-8");
-        const parsed = JSON.parse(raw);
-        return res.json(parsed);
+      if (db) {
+        const collection = db.collection("site");
+        const doc = await collection.findOne({ key: "site_config" });
+        if (doc) {
+          return res.json(doc.data);
+        } else {
+          // Seed from local file
+          let localData = {};
+          if (fs.existsSync(siteDbPath)) {
+            const raw = fs.readFileSync(siteDbPath, "utf-8");
+            localData = JSON.parse(raw);
+          }
+          await collection.insertOne({ key: "site_config", data: localData });
+          return res.json(localData);
+        }
       } else {
-        return res.status(404).json({ error: "Site database file not found" });
+        // Local File fallback
+        if (fs.existsSync(siteDbPath)) {
+          const raw = fs.readFileSync(siteDbPath, "utf-8");
+          const parsed = JSON.parse(raw);
+          return res.json(parsed);
+        } else {
+          return res.status(404).json({ error: "Site database file not found" });
+        }
       }
     } catch (error: any) {
       return res.status(500).json({ error: error.message || "Failed to read site database" });
@@ -103,10 +171,20 @@ async function startServer() {
   });
 
   // POST update site database content
-  app.post("/api/site", (req, res) => {
+  app.post("/api/site", async (req, res) => {
     try {
       const updatedSite = req.body;
-      fs.writeFileSync(siteDbPath, JSON.stringify(updatedSite, null, 2), "utf-8");
+      if (db) {
+        const collection = db.collection("site");
+        await collection.updateOne(
+          { key: "site_config" },
+          { $set: { data: updatedSite } },
+          { upsert: true }
+        );
+      } else {
+        // Local File fallback
+        fs.writeFileSync(siteDbPath, JSON.stringify(updatedSite, null, 2), "utf-8");
+      }
       return res.json({ status: "success" });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || "Failed to save site database" });
@@ -215,7 +293,7 @@ Do not include any formatting or markdown tags like \`\`\`json. Return only the 
     }
   });
 
-  // Serve with Vite in development (pointing to frontend root), or serve statically in production
+  // Serve with Vite in development, or serve statically in production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       root: path.join(process.cwd(), "frontend"),
