@@ -182,13 +182,24 @@ export default function AdminPanel({
       ? software.split(',').map((s) => s.trim()).filter(Boolean)
       : ['Adobe Suite'];
 
-    const finalThumbnail =
-      thumbnail ||
-      (type === 'graphic'
-        ? 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=400'
-        : type === 'motion'
-        ? 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=400'
-        : 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=400');
+    let finalThumbnail = thumbnail.trim();
+    if (!finalThumbnail && type === 'video') {
+      const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+      const match = link.match(youtubeRegExp);
+      if (match && match[2].length === 11) {
+        const videoId = match[2];
+        finalThumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+      }
+    }
+
+    if (!finalThumbnail) {
+      finalThumbnail =
+        type === 'graphic'
+          ? 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=400'
+          : type === 'motion'
+          ? 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=400'
+          : 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=400';
+    }
 
     if (editingId) {
       // Edit existing
