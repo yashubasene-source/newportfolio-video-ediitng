@@ -69,6 +69,7 @@ function MainContent() {
           if (Array.isArray(data) && data.length > 0) {
             setProjects(data);
             localStorage.setItem('anshay-portfolio-projects', JSON.stringify(data));
+            return;
           }
         }
       } catch (err) {

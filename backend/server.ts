@@ -76,7 +76,11 @@ async function startServer() {
 
   // API Health route
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    res.json({
+      status: "ok",
+      database: db ? "mongodb" : "local_file",
+      hasMongoUri: Boolean(process.env.MONGODB_URI)
+    });
   });
 
   // GET projects database content
@@ -191,25 +195,55 @@ async function startServer() {
     }
   });
 
-  // POST save settings (Gemini API Key)
-  app.post("/api/settings", (req, res) => {
+  // POST save settings (Gemini API Key & MongoDB URI)
+  app.post("/api/settings", async (req, res) => {
     try {
-      const { geminiApiKey } = req.body;
+      const { geminiApiKey, mongoUri } = req.body;
       const envPath = path.join(process.cwd(), ".env");
       let envContent = "";
       if (fs.existsSync(envPath)) {
         envContent = fs.readFileSync(envPath, "utf-8");
       }
 
-      if (envContent.includes("GEMINI_API_KEY=")) {
-        envContent = envContent.replace(/GEMINI_API_KEY=.*/, `GEMINI_API_KEY="${geminiApiKey}"`);
-      } else {
-        envContent += `\nGEMINI_API_KEY="${geminiApiKey}"\n`;
+      if (geminiApiKey) {
+        if (envContent.includes("GEMINI_API_KEY=")) {
+          envContent = envContent.replace(/GEMINI_API_KEY=.*/, `GEMINI_API_KEY="${geminiApiKey}"`);
+        } else {
+          envContent += `\nGEMINI_API_KEY="${geminiApiKey}"\n`;
+        }
+        process.env.GEMINI_API_KEY = geminiApiKey;
+      }
+
+      let mongoStatus = "";
+      if (mongoUri !== undefined) {
+        if (envContent.includes("MONGODB_URI=")) {
+          envContent = envContent.replace(/MONGODB_URI=.*/, `MONGODB_URI="${mongoUri}"`);
+        } else {
+          envContent += `\nMONGODB_URI="${mongoUri}"\n`;
+        }
+        process.env.MONGODB_URI = mongoUri;
+
+        if (mongoUri) {
+          try {
+            const client = await MongoClient.connect(mongoUri);
+            db = client.db("portfolio");
+            console.log("Connected to MongoDB Atlas successfully from settings update.");
+            mongoStatus = "connected";
+          } catch (err: any) {
+            console.error("MongoDB Atlas connection failed:", err.message);
+            mongoStatus = "error: " + err.message;
+          }
+        } else {
+          db = null;
+        }
       }
 
       fs.writeFileSync(envPath, envContent, "utf-8");
-      process.env.GEMINI_API_KEY = geminiApiKey;
-      return res.json({ status: "success" });
+      return res.json({
+        status: "success",
+        database: db ? "mongodb" : "local_file",
+        mongoStatus
+      });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || "Failed to save settings" });
     }

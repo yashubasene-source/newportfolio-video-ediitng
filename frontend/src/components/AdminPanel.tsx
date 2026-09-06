@@ -13,6 +13,7 @@ import LocalUploader from './video-management/LocalUploader';
 import AiAutofill from './video-management/AiAutofill';
 import ProjectForm from './video-management/ProjectForm';
 import ProjectList from './video-management/ProjectList';
+import { isCloudinary, getCloudinaryPosterUrl } from '../utils/videoUtils';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -102,7 +103,21 @@ export default function AdminPanel({
 
   // API settings state
   const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('anshay-gemini-api-key') || '');
+  const [mongoUri, setMongoUri] = useState(localStorage.getItem('anshay-mongo-uri') || '');
+  const [dbStatus, setDbStatus] = useState<string>('checking');
   const [savingApiKey, setSavingApiKey] = useState(false);
+
+  // Check database status when admin panel opens
+  useEffect(() => {
+    if (isOpen) {
+      fetch('/api/health')
+        .then((res) => res.json())
+        .then((data) => {
+          setDbStatus(data.database || 'local_file');
+        })
+        .catch(() => setDbStatus('local_file'));
+    }
+  }, [isOpen]);
 
   // Sync siteConfig data to form states when it loads
   useEffect(() => {
@@ -198,12 +213,18 @@ export default function AdminPanel({
       : ['Adobe Suite'];
 
     let finalThumbnail = thumbnail.trim();
-    if (!finalThumbnail && type === 'video') {
-      const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-      const match = link.match(youtubeRegExp);
-      if (match && match[2].length === 11) {
-        const videoId = match[2];
-        finalThumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+    if (!finalThumbnail) {
+      if (isCloudinary(link)) {
+        finalThumbnail = getCloudinaryPosterUrl(link, 1);
+      } else {
+        const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+        const match = link.match(youtubeRegExp);
+        if (match && match[2].length === 11) {
+          const videoId = match[2];
+          finalThumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
+        } else if (/instagram\.com\/(p|reel|reels|tv)\//i.test(link)) {
+          finalThumbnail = 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=1200';
+        }
       }
     }
 
@@ -424,7 +445,7 @@ export default function AdminPanel({
     setSiteConfig(updatedConfig);
   };
 
-  // Save Settings & API key
+  // Save Settings & API key & MongoDB URI
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setSavingApiKey(true);
@@ -434,15 +455,27 @@ export default function AdminPanel({
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geminiApiKey })
+        body: JSON.stringify({ geminiApiKey, mongoUri })
       });
 
       if (!res.ok) throw new Error('Failed to save settings on server');
+      const data = await res.json();
 
       localStorage.setItem('anshay-gemini-api-key', geminiApiKey);
-      alert('Settings saved successfully!');
+      if (mongoUri) {
+        localStorage.setItem('anshay-mongo-uri', mongoUri);
+      }
+      if (data.database) {
+        setDbStatus(data.database);
+      }
+
+      if (data.mongoStatus && data.mongoStatus.startsWith('error')) {
+        alert(`Settings saved, but MongoDB connection failed:\n${data.mongoStatus}\n\nMake sure to whitelist IP (0.0.0.0/0) in MongoDB Atlas Network Access.`);
+      } else {
+        alert('Settings saved successfully!');
+      }
     } catch (err: any) {
-      alert('Failed to save API key on server: ' + err.message);
+      alert('Failed to save settings on server: ' + err.message);
     } finally {
       setSavingApiKey(false);
     }
@@ -1032,15 +1065,46 @@ export default function AdminPanel({
                     </p>
                   </div>
 
+                  {/* Database Status Banner */}
+                  <div className={`p-4 rounded-xl border flex flex-col gap-1.5 ${
+                    dbStatus === 'mongodb'
+                      ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-400'
+                      : 'bg-amber-950/20 border-amber-500/40 text-amber-400'
+                  }`}>
+                    <div className="flex items-center gap-2 font-bold text-xs font-mono">
+                      <span className={`w-2 h-2 rounded-full ${dbStatus === 'mongodb' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+                      <span>{dbStatus === 'mongodb' ? 'MONGODB ATLAS CLOUD CONNECTED' : 'LOCAL FILE MODE (TEMPORARY ON HOSTS)'}</span>
+                    </div>
+                    <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
+                      {dbStatus === 'mongodb'
+                        ? 'Your portfolio data is permanently stored in MongoDB Atlas cloud. Restarts or redeployments will NEVER erase your custom videos or links!'
+                        : 'On free cloud hosts (Render / Vercel), local files reset when the server sleeps. Connect your free MongoDB Atlas URI below to permanently store your links.'}
+                    </p>
+                  </div>
+
                   <form onSubmit={handleSaveSettings} className="flex flex-col gap-4 text-xs font-mono">
                     <div className="flex flex-col gap-1.5">
-                      <label className="text-zinc-400">GEMINI_API_KEY</label>
+                      <label className="text-zinc-400">MONGODB_URI (Permanent Cloud Database)</label>
+                      <input
+                        type="password"
+                        placeholder="mongodb+srv://user:password@cluster0.xxx.mongodb.net/?retryWrites=true&w=majority"
+                        value={mongoUri}
+                        onChange={(e) => setMongoUri(e.target.value)}
+                        className="px-3.5 py-3 rounded-lg bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-700 text-xs"
+                      />
+                      <span className="text-[10px] text-zinc-500 font-sans">
+                        ⚠️ In MongoDB Atlas ➔ Network Access, make sure IP is set to <code className="text-zinc-300">0.0.0.0/0</code> (Allow Access from Anywhere).
+                      </span>
+                    </div>
+
+                    <div className="flex flex-col gap-1.5">
+                      <label className="text-zinc-400">GEMINI_API_KEY (For AI Autofill)</label>
                       <input
                         type="password"
                         placeholder="Paste your Gemini API key"
                         value={geminiApiKey}
                         onChange={(e) => setGeminiApiKey(e.target.value)}
-                        className="px-3.5 py-3 rounded-lg bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-700"
+                        className="px-3.5 py-3 rounded-lg bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-700 text-xs"
                       />
                     </div>
 
@@ -1050,7 +1114,7 @@ export default function AdminPanel({
                       className="py-3 rounded-xl font-bold text-black transition-all cursor-pointer hover:brightness-110 disabled:opacity-50"
                       style={{ backgroundColor: currentTheme.accentHex }}
                     >
-                      {savingApiKey ? 'SAVING KEY...' : 'SAVE SETTINGS'}
+                      {savingApiKey ? 'SAVING SETTINGS...' : 'SAVE CONFIGURATION'}
                     </button>
                   </form>
 

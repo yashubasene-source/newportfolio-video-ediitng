@@ -7,6 +7,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sliders, Sparkles, Video, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { ThemeColors } from '../types';
+import { isCloudinary, getCloudinaryOptimizedVideo, isVideoFile } from '../utils/videoUtils';
 
 interface BeforeAfterProps {
   currentTheme: ThemeColors;
@@ -30,6 +31,21 @@ export default function BeforeAfter({
 
   // Find currently active category
   const activeProg = progressions.find(p => p.niche === activeNiche) || progressions[0];
+
+  // HTML5 Video element refs for direct Cloudinary / MP4 files
+  const video1Ref = useRef<HTMLVideoElement>(null);
+  const video2Ref = useRef<HTMLVideoElement>(null);
+  const video3Ref = useRef<HTMLVideoElement>(null);
+  const video4Ref = useRef<HTMLVideoElement>(null);
+
+  const isHtml5Mode = Boolean(
+    activeProg && (
+      isVideoFile(activeProg.rawVideo) ||
+      isVideoFile(activeProg.editVideo) ||
+      isVideoFile(activeProg.sfxColorVideo) ||
+      isVideoFile(activeProg.finalVideo)
+    )
+  );
 
   // YouTube API states
   const [apiReady, setApiReady] = useState(false);
@@ -112,6 +128,14 @@ export default function BeforeAfter({
     setIsPlaying(false);
     setCurrentTime(0);
     setDuration(0);
+
+    // If in HTML5 mode, skip YouTube players initialization
+    if (isHtml5Mode) {
+      setIsPlaying(false);
+      setCurrentTime(0);
+      setDuration(0);
+      return;
+    }
 
     const destroyPlayers = () => {
       try {
@@ -203,12 +227,49 @@ export default function BeforeAfter({
       clearTimeout(timeout);
       destroyPlayers();
     };
-  }, [apiReady, activeNiche, activeProg]);
+  }, [apiReady, activeNiche, activeProg, isHtml5Mode]);
 
-  // Sync Loop
+  // HTML5 Video synchronization & timeupdate
+  useEffect(() => {
+    if (!isHtml5Mode) return;
+    const v1 = video1Ref.current || video4Ref.current;
+    if (!v1) return;
+
+    const onLoadedMeta = () => {
+      if (v1.duration && !isNaN(v1.duration)) {
+        setDuration(v1.duration);
+      }
+    };
+
+    const onTimeUpdate = () => {
+      setCurrentTime(v1.currentTime);
+      // Sync drift across other videos
+      [video2Ref, video3Ref, video4Ref].forEach((ref) => {
+        if (ref.current && Math.abs(ref.current.currentTime - v1.currentTime) > 0.15) {
+          ref.current.currentTime = v1.currentTime;
+        }
+      });
+    };
+
+    const onEnded = () => {
+      setIsPlaying(false);
+    };
+
+    v1.addEventListener('loadedmetadata', onLoadedMeta);
+    v1.addEventListener('timeupdate', onTimeUpdate);
+    v1.addEventListener('ended', onEnded);
+
+    return () => {
+      v1.removeEventListener('loadedmetadata', onLoadedMeta);
+      v1.removeEventListener('timeupdate', onTimeUpdate);
+      v1.removeEventListener('ended', onEnded);
+    };
+  }, [isHtml5Mode, activeProg]);
+
+  // Sync Loop for YouTube
   useEffect(() => {
     let interval: any;
-    if (isPlaying) {
+    if (isPlaying && !isHtml5Mode) {
       interval = setInterval(() => {
         if (player1Ref.current && typeof player1Ref.current.getCurrentTime === 'function') {
           const t1 = player1Ref.current.getCurrentTime();
@@ -227,13 +288,24 @@ export default function BeforeAfter({
       }, 300);
     }
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, isHtml5Mode]);
 
   // Sync Playback Controls
   const handlePlayPause = () => {
     playSound(600);
+    if (isHtml5Mode) {
+      const vRefs = [video1Ref, video2Ref, video3Ref, video4Ref];
+      if (isPlaying) {
+        vRefs.forEach((r) => r.current?.pause());
+        setIsPlaying(false);
+      } else {
+        vRefs.forEach((r) => r.current?.play().catch(() => {}));
+        setIsPlaying(true);
+      }
+      return;
+    }
+
     const refs = [player1Ref, player2Ref, player3Ref, player4Ref];
-    
     try {
       if (isPlaying) {
         refs.forEach(ref => ref.current && typeof ref.current.pauseVideo === 'function' && ref.current.pauseVideo());
@@ -246,6 +318,15 @@ export default function BeforeAfter({
   };
 
   const handleSeek = (time: number) => {
+    if (isHtml5Mode) {
+      const vRefs = [video1Ref, video2Ref, video3Ref, video4Ref];
+      vRefs.forEach((r) => {
+        if (r.current) r.current.currentTime = time;
+      });
+      setCurrentTime(time);
+      return;
+    }
+
     const refs = [player1Ref, player2Ref, player3Ref, player4Ref];
     try {
       refs.forEach(ref => ref.current && typeof ref.current.seekTo === 'function' && ref.current.seekTo(time, true));
@@ -254,9 +335,16 @@ export default function BeforeAfter({
   };
 
   const handleToggleMute = () => {
-    if (!player4Ref.current) return;
     playSound(700);
+    if (isHtml5Mode) {
+      if (video4Ref.current) {
+        video4Ref.current.muted = !isMuted;
+      }
+      setIsMuted(!isMuted);
+      return;
+    }
 
+    if (!player4Ref.current) return;
     try {
       if (isMuted) {
         player4Ref.current.unMute();
@@ -339,7 +427,17 @@ export default function BeforeAfter({
               <div className="flex flex-col items-center gap-3">
                 <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">1. Raw</span>
                 <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-slate-200/60 shadow-xl bg-zinc-950 relative">
-                  {getYouTubeId(activeProg.rawVideo) ? (
+                  {isVideoFile(activeProg.rawVideo) ? (
+                    <video
+                      ref={video1Ref}
+                      src={isCloudinary(activeProg.rawVideo) ? getCloudinaryOptimizedVideo(activeProg.rawVideo, { quality: 'best' }) : activeProg.rawVideo}
+                      muted
+                      playsInline
+                      preload="auto"
+                      className="w-full h-full object-cover absolute inset-0"
+                      style={{ imageRendering: 'high-quality' }}
+                    />
+                  ) : getYouTubeId(activeProg.rawVideo) ? (
                     <div id="raw-player" className="w-full h-full absolute inset-0" />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center font-mono text-[9px] text-zinc-500">
@@ -353,7 +451,17 @@ export default function BeforeAfter({
               <div className="flex flex-col items-center gap-3">
                 <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">2. Edit</span>
                 <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-slate-200/60 shadow-xl bg-zinc-950 relative">
-                  {getYouTubeId(activeProg.editVideo) ? (
+                  {isVideoFile(activeProg.editVideo) ? (
+                    <video
+                      ref={video2Ref}
+                      src={isCloudinary(activeProg.editVideo) ? getCloudinaryOptimizedVideo(activeProg.editVideo, { quality: 'best' }) : activeProg.editVideo}
+                      muted
+                      playsInline
+                      preload="auto"
+                      className="w-full h-full object-cover absolute inset-0"
+                      style={{ imageRendering: 'high-quality' }}
+                    />
+                  ) : getYouTubeId(activeProg.editVideo) ? (
                     <div id="edit-player" className="w-full h-full absolute inset-0" />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center font-mono text-[9px] text-zinc-500">
@@ -367,7 +475,17 @@ export default function BeforeAfter({
               <div className="flex flex-col items-center gap-3">
                 <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">3. sfx + color</span>
                 <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-slate-200/60 shadow-xl bg-zinc-950 relative">
-                  {getYouTubeId(activeProg.sfxColorVideo) ? (
+                  {isVideoFile(activeProg.sfxColorVideo) ? (
+                    <video
+                      ref={video3Ref}
+                      src={isCloudinary(activeProg.sfxColorVideo) ? getCloudinaryOptimizedVideo(activeProg.sfxColorVideo, { quality: 'best' }) : activeProg.sfxColorVideo}
+                      muted
+                      playsInline
+                      preload="auto"
+                      className="w-full h-full object-cover absolute inset-0"
+                      style={{ imageRendering: 'high-quality' }}
+                    />
+                  ) : getYouTubeId(activeProg.sfxColorVideo) ? (
                     <div id="sfx-player" className="w-full h-full absolute inset-0" />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center font-mono text-[9px] text-zinc-500">
@@ -384,7 +502,17 @@ export default function BeforeAfter({
                   <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
                 </span>
                 <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border-2 shadow-xl bg-zinc-950 relative transition-colors duration-500" style={{ borderColor: currentTheme.accentHex }}>
-                  {getYouTubeId(activeProg.finalVideo) ? (
+                  {isVideoFile(activeProg.finalVideo) ? (
+                    <video
+                      ref={video4Ref}
+                      src={isCloudinary(activeProg.finalVideo) ? getCloudinaryOptimizedVideo(activeProg.finalVideo, { quality: 'best' }) : activeProg.finalVideo}
+                      muted={isMuted}
+                      playsInline
+                      preload="auto"
+                      className="w-full h-full object-cover absolute inset-0"
+                      style={{ imageRendering: 'high-quality' }}
+                    />
+                  ) : getYouTubeId(activeProg.finalVideo) ? (
                     <div id="final-player" className="w-full h-full absolute inset-0" />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-4 text-center font-mono text-[9px] text-zinc-500">

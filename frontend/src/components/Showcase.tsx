@@ -9,6 +9,19 @@ import { Play, Grid, Film, Image as ImageIcon, Sparkles, X, Clock, Monitor, Tag,
 import { Project, ProjectType, NicheType, ThemeColors } from '../types';
 import { DEFAULT_PROJECTS } from '../data/defaultProjects';
 import { usePerformance } from '../motion/performanceManager';
+import {
+  isCloudinary,
+  getCloudinaryOptimizedVideo,
+  getCloudinaryPosterUrl,
+  isYouTube,
+  getYouTubeEmbedUrl,
+  getYouTubeThumbnail,
+  isInstagram,
+  isVimeo,
+  getVimeoEmbedUrl,
+  isVideoFile,
+  getAutoThumbnail,
+} from '../utils/videoUtils';
 
 interface ShowcaseProps {
   currentTheme: ThemeColors;
@@ -40,35 +53,14 @@ export default function Showcase({ currentTheme, soundEnabled, projectsList, onO
     } catch (e) {}
   };
 
-  // Convert generic YouTube link to proper embed URL
-  const getEmbedUrl = (link: string): string => {
-    if (!link) return '';
-    let videoId = '';
-    const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-    const match = link.match(youtubeRegExp);
-    if (match && match[2].length === 11) {
-      videoId = match[2];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+  const getFallbackThumbnail = (project: Project): string => {
+    if (project.thumbnail) return project.thumbnail;
+    const auto = getAutoThumbnail(project.link);
+    if (auto) return auto;
+    if (project.aspectRatio === '9:16') {
+      return 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=900';
     }
-    return link;
-  };
-
-  const isYouTube = (link: string): boolean => {
-    return /youtube\.com|youtu\.be/i.test(link);
-  };
-
-  const isInstagram = (link: string): boolean => {
-    return /instagram\.com\/(p|reel|reels|tv)\//i.test(link);
-  };
-
-  const getInstagramEmbedUrl = (link: string): string => {
-    if (!link) return '';
-    const cleanLink = link.split('?')[0].replace(/\/$/, '');
-    return `${cleanLink}/embed`;
-  };
-
-  const isVideoFile = (link: string): boolean => {
-    return /\.(mp4|webm|ogg)/i.test(link) || link.startsWith('http') && !isYouTube(link) && !isInstagram(link) && !/\.(jpg|jpeg|png|webp|gif)/i.test(link);
+    return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=600';
   };
 
   // Separate projects into exactly up to 20 Reels (9:16) and 20 Videos (16:9)
@@ -189,7 +181,7 @@ export default function Showcase({ currentTheme, soundEnabled, projectsList, onO
                     }}
                   >
                     <img
-                      src={project.thumbnail || 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=400'}
+                      src={getFallbackThumbnail(project)}
                       alt={project.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
                       loading="lazy"
@@ -310,7 +302,7 @@ export default function Showcase({ currentTheme, soundEnabled, projectsList, onO
                     }}
                   >
                     <img
-                      src={project.thumbnail || 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=600'}
+                      src={getFallbackThumbnail(project)}
                       alt={project.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
                       loading="lazy"
@@ -437,42 +429,73 @@ export default function Showcase({ currentTheme, soundEnabled, projectsList, onO
                   {isYouTube(lightboxProject.link) ? (
                     <iframe
                       id="lightbox-iframe-player"
-                      src={getEmbedUrl(lightboxProject.link)}
+                      src={getYouTubeEmbedUrl(lightboxProject.link)}
                       className="w-full h-full border-0 absolute inset-0 rounded-lg"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                       title={lightboxProject.title}
                     />
+                  ) : isVimeo(lightboxProject.link) ? (
+                    <iframe
+                      id="lightbox-vimeo-player"
+                      src={getVimeoEmbedUrl(lightboxProject.link)}
+                      className="w-full h-full border-0 absolute inset-0 rounded-lg"
+                      allow="autoplay; fullscreen; picture-in-picture"
+                      allowFullScreen
+                      title={lightboxProject.title}
+                    />
                   ) : isInstagram(lightboxProject.link) ? (
-                    <div className="w-full h-full absolute inset-0 overflow-hidden rounded-lg bg-zinc-950 flex flex-col items-center justify-center p-6 text-center gap-4 border border-zinc-850">
-                      <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 flex items-center justify-center shadow-lg">
-                        <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                    <div className="w-full h-full absolute inset-0 overflow-hidden rounded-lg bg-zinc-950 border border-zinc-850">
+                      <img
+                        src={getFallbackThumbnail(lightboxProject)}
+                        alt={lightboxProject.title}
+                        className="w-full h-full object-cover opacity-70"
+                        referrerPolicy="no-referrer"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
+                      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center gap-4">
+                        <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 flex items-center justify-center shadow-lg">
+                          <Play className="w-6 h-6 text-white fill-white ml-0.5" />
+                        </div>
+                        <div className="flex flex-col gap-1.5 max-w-xs">
+                          <h4 className="text-white font-bold text-sm">Instagram Reel / Video</h4>
+                          <p className="text-[10px] text-zinc-200 leading-relaxed">
+                            Instagram embeds are restricted, so this preview opens in Instagram for the best quality and full playback.
+                          </p>
+                        </div>
+                        <a
+                          href={lightboxProject.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-5 py-2 rounded-xl font-bold font-mono text-[9px] tracking-widest text-white transition-all bg-gradient-to-r from-yellow-500 via-red-500 to-purple-600 hover:brightness-110 shadow-md cursor-pointer uppercase"
+                        >
+                          Watch on Instagram ↗
+                        </a>
                       </div>
-                      <div className="flex flex-col gap-1.5 max-w-xs">
-                        <h4 className="text-white font-bold text-sm">Instagram Reel / Video</h4>
-                        <p className="text-[10px] text-zinc-400 leading-relaxed">
-                          Instagram embeds are restricted. You can watch this video directly on Instagram!
-                        </p>
-                      </div>
-                      <a
-                        href={lightboxProject.link}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="px-5 py-2 rounded-xl font-bold font-mono text-[9px] tracking-widest text-white transition-all bg-gradient-to-r from-yellow-500 via-red-500 to-purple-600 hover:brightness-110 shadow-md cursor-pointer uppercase"
-                      >
-                        Watch on Instagram ↗
-                      </a>
                     </div>
                   ) : isVideoFile(lightboxProject.link) ? (
-                    <video
-                      id="lightbox-native-player"
-                      src={lightboxProject.link}
-                      controls
-                      autoPlay
-                      className={`w-full h-full absolute inset-0 rounded-lg ${
-                        lightboxProject.aspectRatio === '9:16' ? 'object-cover' : 'object-contain'
-                      }`}
-                    />
+                    <div className="w-full h-full relative flex items-center justify-center">
+                      <video
+                        id="lightbox-native-player"
+                        src={isCloudinary(lightboxProject.link)
+                          ? getCloudinaryOptimizedVideo(lightboxProject.link, { quality: 'best' })
+                          : lightboxProject.link}
+                        poster={getFallbackThumbnail(lightboxProject)}
+                        controls
+                        autoPlay
+                        playsInline
+                        preload="auto"
+                        className={`w-full h-full absolute inset-0 rounded-lg bg-black ${
+                          lightboxProject.aspectRatio === '9:16' ? 'object-cover' : 'object-contain'
+                        }`}
+                        style={{ imageRendering: 'high-quality', transform: 'translateZ(0)' }}
+                      />
+                      {/* High-Fidelity Quality Indicator Badge */}
+                      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/80 border border-emerald-500/50 text-[9px] font-mono text-emerald-300 backdrop-blur-md shadow-lg pointer-events-none">
+                        <Sparkles className="w-3 h-3 text-emerald-400" />
+                        <span>{isCloudinary(lightboxProject.link) ? 'CLOUDINARY MASTER HD' : 'HIGH-RES DIRECT MASTER'}</span>
+                      </div>
+                    </div>
                   ) : (
                     <img
                       id="lightbox-image-preview"

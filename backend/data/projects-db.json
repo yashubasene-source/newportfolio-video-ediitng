@@ -1,5 +1,21 @@
 [
   {
+    "id": "custom-1788686825873",
+    "title": "tech 1",
+    "type": "video",
+    "niche": "normal-edit",
+    "link": "https://res.cloudinary.com/dew7bd0jq/video/upload/v1788686412/assignment_1_1_bwq0go.mp4",
+    "thumbnail": "https://res.cloudinary.com/dew7bd0jq/video/upload/so_1,q_auto:best,f_auto/v1788686412/assignment_1_1_bwq0go.jpg",
+    "description": "this is tech video ",
+    "duration": "0:45",
+    "role": "Lead Editor",
+    "software": [
+      "Adobe Suite"
+    ],
+    "createdAt": "2026",
+    "aspectRatio": "9:16"
+  },
+  {
     "id": "custom-1783145606351",
     "title": "Portfolio Reel 16",
     "type": "video",

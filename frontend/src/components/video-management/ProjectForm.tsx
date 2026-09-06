@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ProjectType, NicheType, ThemeColors } from '../../types';
+import { isCloudinary, getCloudinaryPosterUrl } from '../../utils/videoUtils';
 
 interface ProjectFormProps {
   editingId: string | null;
@@ -95,8 +96,30 @@ export default function ProjectForm({
   const handleLinkBlur = async (urlVal: string) => {
     if (!urlVal) return;
 
+    if (isCloudinary(urlVal)) {
+      setType('video');
+      const isVertical = /reel|reels|short|shorts|vertical|9_16|9-16/i.test(urlVal);
+      if (isVertical) {
+        setAspectRatio('9:16');
+      }
+      const poster = getCloudinaryPosterUrl(urlVal, 1);
+      if (poster && !thumbnail) {
+        setThumbnail(poster);
+      }
+      playSound(880, 0.2);
+      return;
+    }
+
     const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
     const match = urlVal.match(youtubeRegExp);
+
+    if (/instagram\.com\/(p|reel|reels|tv)\//i.test(urlVal)) {
+      setAspectRatio(/reel|reels\//i.test(urlVal) ? '9:16' : '16:9');
+      if (!thumbnail) {
+        setThumbnail('https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=1200');
+      }
+      return;
+    }
 
     if (match && match[2].length === 11) {
       setIsFetchingYoutube(true);
@@ -148,17 +171,22 @@ export default function ProjectForm({
         {/* Video Link */}
         <div className="flex flex-col gap-1">
           <div className="flex justify-between items-center">
-            <label className="text-zinc-500">Video Link / Embed URL (Required)</label>
+            <label className="text-zinc-500">Video Link / Cloudinary URL (Required)</label>
             {isFetchingYoutube && (
               <span className="text-[9px] text-zinc-400 animate-pulse font-mono flex items-center gap-1">
                 ⚡ AUTO-FETCHING YOUTUBE DETAILS...
+              </span>
+            )}
+            {isCloudinary(link) && (
+              <span className="text-[9px] text-emerald-400 font-mono flex items-center gap-1">
+                ✓ CLOUDINARY READY (HD POSTER AUTO-GENERATED)
               </span>
             )}
           </div>
           <input
             type="text"
             required
-            placeholder="Youtube, Instagram, or local /uploads/... path"
+            placeholder="Cloudinary MP4, YouTube, Instagram, or Vimeo URL"
             value={link}
             onChange={(e) => setLink(e.target.value)}
             onBlur={(e) => handleLinkBlur(e.target.value)}
