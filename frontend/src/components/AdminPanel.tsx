@@ -13,6 +13,7 @@ import LocalUploader from './video-management/LocalUploader';
 import AiAutofill from './video-management/AiAutofill';
 import ProjectForm from './video-management/ProjectForm';
 import ProjectList from './video-management/ProjectList';
+import ProjectViewer from './ProjectViewer';
 import { isCloudinary, getCloudinaryPosterUrl } from '../utils/videoUtils';
 
 interface AdminPanelProps {
@@ -48,15 +49,25 @@ export default function AdminPanel({
   // Form states for projects
   const [editingId, setEditingId] = useState<string | null>(null);
   const [title, setTitle] = useState('');
+  const [slug, setSlug] = useState('');
   const [type, setType] = useState<ProjectType>('video');
   const [niche, setNiche] = useState<NicheType>('normal-edit');
   const [link, setLink] = useState('');
   const [thumbnail, setThumbnail] = useState('');
+  const [previewVideo, setPreviewVideo] = useState('');
+  const [fullVideo, setFullVideo] = useState('');
+  const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
   const [duration, setDuration] = useState('');
   const [role, setRole] = useState('');
   const [software, setSoftware] = useState('');
-  const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9'>('16:9');
+  const [createdAtYear, setCreatedAtYear] = useState('2026');
+  const [featured, setFeatured] = useState(false);
+  const [order, setOrder] = useState(0);
+  const [tags, setTags] = useState('');
+  const [status, setStatus] = useState<'draft' | 'published'>('published');
+  const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('16:9');
+  const [mediaType, setMediaType] = useState<'reel' | 'video'>('reel');
   const [client, setClient] = useState('');
   const [resolution, setResolution] = useState('');
   const [frameRate, setFrameRate] = useState('');
@@ -65,6 +76,7 @@ export default function AdminPanel({
   const [challenges, setChallenges] = useState('');
   const [solutions, setSolutions] = useState('');
   const [fullDescription, setFullDescription] = useState('');
+  const [previewModalProject, setPreviewModalProject] = useState<Project | null>(null);
 
   // Site Settings Form states
   const [heroStatusText, setHeroStatusText] = useState('');
@@ -212,6 +224,10 @@ export default function AdminPanel({
       ? software.split(',').map((s) => s.trim()).filter(Boolean)
       : ['Adobe Suite'];
 
+    const tagsArray = tags
+      ? tags.split(',').map((t) => t.trim()).filter(Boolean)
+      : undefined;
+
     let finalThumbnail = thumbnail.trim();
     if (!finalThumbnail) {
       if (isCloudinary(link)) {
@@ -244,15 +260,26 @@ export default function AdminPanel({
           ? {
               ...p,
               title,
+              slug: slug || undefined,
               type,
               niche,
               link,
               thumbnail: finalThumbnail,
+              poster: finalThumbnail,
+              previewVideo: previewVideo || undefined,
+              fullVideo: fullVideo || undefined,
+              shortDescription: shortDescription || undefined,
               description,
               duration: duration || '0:45',
               role: role || 'Lead Editor',
               software: softwareArray,
+              createdAt: createdAtYear || '2026',
               aspectRatio,
+              mediaType: mediaType || (aspectRatio === '9:16' ? 'reel' : 'video'),
+              featured,
+              order,
+              tags: tagsArray,
+              status,
               client: client || undefined,
               resolution: resolution || undefined,
               frameRate: frameRate || undefined,
@@ -273,16 +300,26 @@ export default function AdminPanel({
       const newProj: Project = {
         id: `custom-${Date.now()}`,
         title,
+        slug: slug || undefined,
         type,
         niche,
         link,
         thumbnail: finalThumbnail,
+        poster: finalThumbnail,
+        previewVideo: previewVideo || undefined,
+        fullVideo: fullVideo || undefined,
+        shortDescription: shortDescription || undefined,
         description,
         duration: duration || '0:45',
         role: role || 'Lead Editor',
         software: softwareArray,
-        createdAt: '2026',
+        createdAt: createdAtYear || '2026',
         aspectRatio,
+        mediaType: mediaType || (aspectRatio === '9:16' ? 'reel' : 'video'),
+        featured,
+        order,
+        tags: tagsArray,
+        status,
         client: client || undefined,
         resolution: resolution || undefined,
         frameRate: frameRate || undefined,
@@ -304,13 +341,23 @@ export default function AdminPanel({
   const resetProjectForm = () => {
     setEditingId(null);
     setTitle('');
+    setSlug('');
     setLink('');
     setThumbnail('');
+    setPreviewVideo('');
+    setFullVideo('');
+    setShortDescription('');
     setDescription('');
     setDuration('');
     setRole('');
     setSoftware('');
-    setAspectRatio('16:9');
+    setCreatedAtYear('2026');
+    setFeatured(false);
+    setOrder(0);
+    setTags('');
+    setStatus('published');
+    setAspectRatio('9:16');
+    setMediaType('reel');
     setClient('');
     setResolution('');
     setFrameRate('');
@@ -324,15 +371,25 @@ export default function AdminPanel({
   const handleEditInit = (p: Project) => {
     setEditingId(p.id);
     setTitle(p.title);
+    setSlug(p.slug || '');
     setType(p.type);
     setNiche(p.niche);
     setLink(p.link);
-    setThumbnail(p.thumbnail || '');
+    setThumbnail(p.thumbnail || p.poster || '');
+    setPreviewVideo(p.previewVideo || '');
+    setFullVideo(p.fullVideo || '');
+    setShortDescription(p.shortDescription || '');
     setDescription(p.description);
     setDuration(p.duration || '');
     setRole(p.role || '');
     setSoftware(p.software ? p.software.join(', ') : '');
-    setAspectRatio(p.aspectRatio || '16:9');
+    setCreatedAtYear(p.createdAt || '2026');
+    setFeatured(p.featured || false);
+    setOrder(p.order || 0);
+    setTags(p.tags ? p.tags.join(', ') : '');
+    setStatus(p.status || 'published');
+    setAspectRatio(p.aspectRatio || '9:16');
+    setMediaType(p.mediaType || (p.aspectRatio === '9:16' ? 'reel' : 'video'));
     setClient(p.client || '');
     setResolution(p.resolution || '');
     setFrameRate(p.frameRate || '');
@@ -343,6 +400,25 @@ export default function AdminPanel({
     setFullDescription(p.fullDescription || '');
     setActiveTab('projects');
     playSound(600);
+  };
+
+  const handleTogglePublish = (id: string) => {
+    const updated = projects.map((p) =>
+      p.id === id
+        ? { ...p, status: ((p.status === 'draft' ? 'published' : 'draft') as 'draft' | 'published') }
+        : p
+    );
+    setProjects(updated);
+    playSound(750, 0.08);
+  };
+
+  const handleReorder = (fromIdx: number, toIdx: number) => {
+    if (toIdx < 0 || toIdx >= projects.length) return;
+    const reordered = [...projects];
+    const [moved] = reordered.splice(fromIdx, 1);
+    reordered.splice(toIdx, 0, moved);
+    setProjects(reordered);
+    playSound(550, 0.05);
   };
 
   const handleDelete = (id: string) => {
@@ -607,18 +683,28 @@ export default function AdminPanel({
                     editingId={editingId}
                     title={title}
                     setTitle={setTitle}
+                    slug={slug}
+                    setSlug={setSlug}
                     link={link}
                     setLink={setLink}
                     type={type}
                     setType={setType}
+                    mediaType={mediaType}
+                    setMediaType={setMediaType}
                     niche={niche}
                     setNiche={setNiche}
                     aspectRatio={aspectRatio}
                     setAspectRatio={setAspectRatio}
                     description={description}
                     setDescription={setDescription}
+                    shortDescription={shortDescription}
+                    setShortDescription={setShortDescription}
                     thumbnail={thumbnail}
                     setThumbnail={setThumbnail}
+                    previewVideo={previewVideo}
+                    setPreviewVideo={setPreviewVideo}
+                    fullVideo={fullVideo}
+                    setFullVideo={setFullVideo}
                     duration={duration}
                     setDuration={setDuration}
                     role={role}
@@ -627,6 +713,16 @@ export default function AdminPanel({
                     setSoftware={setSoftware}
                     client={client}
                     setClient={setClient}
+                    createdAt={createdAtYear}
+                    setCreatedAt={setCreatedAtYear}
+                    featured={featured}
+                    setFeatured={setFeatured}
+                    order={order}
+                    setOrder={setOrder}
+                    tags={tags}
+                    setTags={setTags}
+                    status={status}
+                    setStatus={setStatus}
                     resolution={resolution}
                     setResolution={setResolution}
                     frameRate={frameRate}
@@ -658,6 +754,9 @@ export default function AdminPanel({
                     projects={projects}
                     onEditInit={handleEditInit}
                     onDelete={handleDelete}
+                    onTogglePublish={handleTogglePublish}
+                    onReorder={handleReorder}
+                    onPreview={(p) => setPreviewModalProject(p)}
                     onResetDefaults={onResetDefaults}
                     onExport={handleExport}
                     onAddNew={resetProjectForm}
@@ -1138,6 +1237,17 @@ export default function AdminPanel({
 
             </div>
           </div>
+        )}
+
+        {/* Project Preview Lightbox Modal */}
+        {previewModalProject && (
+          <ProjectViewer
+            project={previewModalProject}
+            onClose={() => setPreviewModalProject(null)}
+            currentTheme={currentTheme}
+            allProjects={projects}
+            onSelectRelated={(p) => setPreviewModalProject(p)}
+          />
         )}
       </div>
     </div>

@@ -3,39 +3,51 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Play, Grid, Film, Image as ImageIcon, Sparkles, X, Clock, Monitor, Tag, User, Cpu, Layers, Palette, Volume2, Briefcase, Wrench, CheckCircle2, Scissors } from 'lucide-react';
-import { Project, ProjectType, NicheType, ThemeColors } from '../types';
-import { DEFAULT_PROJECTS } from '../data/defaultProjects';
+import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { Scissors, Film, Sparkles, Play, Pause } from 'lucide-react';
+import { Project, ThemeColors } from '../types';
 import { usePerformance } from '../motion/performanceManager';
-import {
-  isCloudinary,
-  getCloudinaryOptimizedVideo,
-  getCloudinaryPosterUrl,
-  isYouTube,
-  getYouTubeEmbedUrl,
-  getYouTubeThumbnail,
-  isInstagram,
-  isVimeo,
-  getVimeoEmbedUrl,
-  isVideoFile,
-  getAutoThumbnail,
-} from '../utils/videoUtils';
+import CurvedGalleryStage from './gallery/CurvedGalleryStage';
+import ActiveProjectInfo from './gallery/ActiveProjectInfo';
+import GalleryNavigation from './gallery/GalleryNavigation';
 
 interface ShowcaseProps {
   currentTheme: ThemeColors;
   soundEnabled: boolean;
   projectsList: Project[];
   onOpenAdmin?: () => void;
+  onSelectProject: (project: Project) => void;
+  isViewerOpen?: boolean;
 }
 
-export default function Showcase({ currentTheme, soundEnabled, projectsList, onOpenAdmin }: ShowcaseProps) {
-  const [lightboxProject, setLightboxProject] = useState<Project | null>(null);
-  const [activeFilter, setActiveFilter] = useState<'all' | 'reels' | 'videos'>('all');
+export default function Showcase({
+  currentTheme,
+  soundEnabled,
+  projectsList,
+  onOpenAdmin,
+  onSelectProject,
+  isViewerOpen = false,
+}: ShowcaseProps) {
+  const sectionRef = useRef<HTMLElement | null>(null);
 
-  const { capabilities, settings } = usePerformance();
+  // Strict Media Classification: 'reels' (9:16 vertical only) vs 'videos' (landscape only)
+  const [mediaMode, setMediaMode] = useState<'reels' | 'videos'>('reels');
+  const [selectedNiche, setSelectedNiche] = useState<string>('all');
+  const [activeIndex, setActiveIndex] = useState<number>(0);
+  const [isModeTransitioning, setIsModeTransitioning] = useState<boolean>(false);
+
+  // User control and autoplay states
+  const [isPaused, setIsPaused] = useState<boolean>(false);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const [motionDirection, setMotionDirection] = useState<'ltr' | 'rtl'>('rtl');
+  const [introEntered, setIntroEntered] = useState<boolean>(false);
+  const [isFocusing, setIsFocusing] = useState<boolean>(false);
+  const [scrollExitProgress, setScrollExitProgress] = useState<number>(0);
+
+  const { capabilities } = usePerformance();
   const isLiteMode = capabilities.mode === 'lite' || capabilities.mode === 'reduced';
+  const isTouch = capabilities.isTouch || capabilities.isMobile;
 
   const playSound = (freq: number, dur = 0.05) => {
     if (!soundEnabled) return;
@@ -53,615 +65,416 @@ export default function Showcase({ currentTheme, soundEnabled, projectsList, onO
     } catch (e) {}
   };
 
-  const getFallbackThumbnail = (project: Project): string => {
-    if (project.thumbnail) return project.thumbnail;
-    const auto = getAutoThumbnail(project.link);
-    if (auto) return auto;
-    if (project.aspectRatio === '9:16') {
-      return 'https://images.unsplash.com/photo-1516280440614-37939bbacd81?q=80&w=900';
-    }
-    return 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=600';
+  // State 01: Viewport Entrance Observation for Controlled Intro
+  useEffect(() => {
+    if (!sectionRef.current) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIntroEntered(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+    observer.observe(sectionRef.current);
+    return () => observer.disconnect();
+  }, []);
+
+  // State 11 & 12: Scroll-based storytelling and section exit
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    let ticking = false;
+    const handleScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          if (sectionRef.current) {
+            const rect = sectionRef.current.getBoundingClientRect();
+            const windowHeight = window.innerHeight;
+
+            const sectionBottom = rect.bottom;
+            const threshold = windowHeight * 0.5;
+
+            if (sectionBottom < threshold) {
+              const exit = Math.min(1, Math.max(0, (threshold - sectionBottom) / threshold));
+              setScrollExitProgress(exit);
+            } else {
+              setScrollExitProgress(0);
+            }
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // STRICT SEPARATION & DEDUPLICATION: Reels and Videos datasets NEVER mix and never repeat!
+  const reelsDataset = useMemo(() => {
+    const seenIds = new Set<string>();
+    const seenLinks = new Set<string>();
+    return projectsList
+      .filter((p) => p.mediaType === 'reel' || p.aspectRatio === '9:16' || p.link?.includes('/shorts/'))
+      .filter((p) => {
+        const link = (p.videoUrl || p.link || '').trim();
+        if (seenIds.has(p.id) || (link && seenLinks.has(link))) {
+          return false;
+        }
+        seenIds.add(p.id);
+        if (link) seenLinks.add(link);
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return (a.order || 0) - (b.order || 0);
+      });
+  }, [projectsList]);
+
+  const videosDataset = useMemo(() => {
+    const seenIds = new Set<string>();
+    const seenLinks = new Set<string>();
+    return projectsList
+      .filter((p) => p.mediaType === 'video' || (p.mediaType !== 'reel' && p.aspectRatio !== '9:16' && !p.link?.includes('/shorts/')))
+      .filter((p) => {
+        const link = (p.videoUrl || p.link || '').trim();
+        if (seenIds.has(p.id) || (link && seenLinks.has(link))) {
+          return false;
+        }
+        seenIds.add(p.id);
+        if (link) seenLinks.add(link);
+        return true;
+      })
+      .sort((a, b) => {
+        if (a.featured && !b.featured) return -1;
+        if (!a.featured && b.featured) return 1;
+        return (a.order || 0) - (b.order || 0);
+      });
+  }, [projectsList]);
+
+  // Current active mode dataset
+  const activeModeProjects = mediaMode === 'reels' ? reelsDataset : videosDataset;
+
+  // Available niches strictly inside the selected mode
+  const availableNiches = useMemo(() => {
+    const rawNiches = activeModeProjects.map((p) => p.niche).filter(Boolean);
+    const uniqueNiches: string[] = Array.from(new Set(rawNiches));
+    return uniqueNiches.map((niche) => ({
+      id: niche,
+      name: niche.replace('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      count: activeModeProjects.filter((p) => p.niche === niche).length,
+    }));
+  }, [activeModeProjects]);
+
+  // Filtered projects within the active mode
+  const filteredProjects = useMemo(() => {
+    if (selectedNiche === 'all') return activeModeProjects;
+    return activeModeProjects.filter((p) => p.niche === selectedNiche);
+  }, [activeModeProjects, selectedNiche]);
+
+  // Cinematic category switch animation (500–800ms)
+  const handleModeChange = (newMode: 'reels' | 'videos') => {
+    if (newMode === mediaMode || isModeTransitioning) return;
+    playSound(750, 0.08);
+    setIsModeTransitioning(true);
+
+    // Step 1: Smooth fade & scale down out
+    setTimeout(() => {
+      setMediaMode(newMode);
+      setSelectedNiche('all');
+      setActiveIndex(0);
+
+      // Step 2: Smooth enter from depth
+      setTimeout(() => {
+        setIsModeTransitioning(false);
+      }, 50);
+    }, 320);
   };
 
-  // Separate projects into exactly up to 20 Reels (9:16) and 20 Videos (16:9)
-  const reels = projectsList.filter((project) => project.aspectRatio === '9:16').slice(0, 20);
-  const videos = projectsList.filter((project) => project.aspectRatio !== '9:16').slice(0, 20);
+  const handlePrev = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('conveyor-nudge', { detail: { dir: -1 } }));
+    }
+    playSound(600, 0.04);
+  }, []);
+
+  const handleNext = useCallback(() => {
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('conveyor-nudge', { detail: { dir: 1 } }));
+    }
+    playSound(700, 0.04);
+  }, []);
+
+  // State 07: Project Focus Mode transition before opening viewer
+  const handleOpenProjectFocus = (project: Project) => {
+    setIsFocusing(true);
+    playSound(850, 0.15);
+
+    // Brief 280ms spatial elevation before overlay modal opens
+    setTimeout(() => {
+      onSelectProject(project);
+      setIsFocusing(false);
+    }, 280);
+  };
+
+  const safeActiveIndex =
+    filteredProjects.length > 0 ? Math.min(activeIndex, filteredProjects.length - 1) : 0;
+  const activeProject = filteredProjects[safeActiveIndex] || null;
 
   return (
-    <section id="work-section" className="relative bg-transparent py-24 border-b border-slate-200/50 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-6 relative z-10">
-        
-        {/* Header */}
-        <div className="text-center flex flex-col items-center gap-4 max-w-2xl mx-auto mb-10">
-          <p className="text-[10px] font-mono tracking-[4px] text-slate-400 uppercase">
-            PORTFOLIO SHOWCASE
-          </p>
-          <h2 className="font-sans font-black text-4xl md:text-5xl leading-tight text-slate-900">
-            Work That Speaks <span style={{ color: currentTheme.accentHex }}>Volumes</span>
+    <section
+      ref={sectionRef}
+      id="work-section"
+      className="relative bg-transparent py-20 sm:py-28 border-b border-slate-200/60 overflow-hidden select-none"
+    >
+      {/* Editorial Margins Coordinates */}
+      <div className="absolute top-8 left-8 pointer-events-none text-slate-300 font-mono text-xs select-none">
+        +
+      </div>
+      <div className="absolute top-8 right-8 pointer-events-none text-slate-300 font-mono text-xs select-none">
+        +
+      </div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
+        {/* 
+          STATE 01: INITIAL INTRO
+          Large oversized typography: SELECTED WORK
+        */}
+        <div
+          style={{
+            transform: introEntered
+              ? 'translate3d(0, 0, 0) scale(1)'
+              : 'translate3d(0, 24px, 0) scale(0.96)',
+            opacity: introEntered ? 1 : 0,
+            transition: 'transform 850ms cubic-bezier(0.22, 1, 0.36, 1), opacity 850ms ease',
+          }}
+          className="text-center flex flex-col items-center gap-3 sm:gap-4 max-w-4xl mx-auto mb-8 sm:mb-10"
+        >
+          {/* Phase Badge & Continuous Showcase Live Status Indicator */}
+          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white/80 backdrop-blur-sm text-[10px] font-mono tracking-[0.2em] text-slate-600 uppercase shadow-xs">
+            <span
+              className={`w-2 h-2 rounded-full ${
+                isPaused || isHovered || isDragging ? 'bg-amber-400' : 'animate-pulse'
+              }`}
+              style={{
+                backgroundColor:
+                  isPaused || isHovered || isDragging
+                    ? '#f59e0b'
+                    : currentTheme.accentHex || '#E63B2E',
+              }}
+            />
+            <span>
+              {isPaused
+                ? '3D CONVEYOR · PAUSED (SPACE)'
+                : isHovered
+                ? '3D CONVEYOR · HOVER PAUSED'
+                : isDragging
+                ? '3D CONVEYOR · SCRUBBING'
+                : '3D MEDIA CONVEYOR · RIGHT → LEFT LIVE'}
+            </span>
+          </div>
+
+          {/* Oversized Cinematic Typography (State 01) */}
+          <h2 className="font-sans font-black text-5xl sm:text-7xl md:text-8xl tracking-tight text-slate-900 leading-[0.95] uppercase">
+            SELECTED <br />
+            <span
+              className="text-transparent bg-clip-text"
+              style={{
+                backgroundImage: `linear-gradient(to right, ${currentTheme.accentHex || '#E63B2E'}, #0f172a)`,
+              }}
+            >
+              WORK
+            </span>
           </h2>
-          <p className="text-slate-600 text-sm mb-2">
-            Cinematic color-graded footage, scroll-stopping reels, and dynamic video edits designed to maximize engagement and watch time.
+
+          <p className="text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed max-w-xl font-sans mt-1">
+            An interactive 3D spatial timeline of commercial edits, viral retention sequences, and documentary grade storytelling.
           </p>
+
           {onOpenAdmin && (
-            <motion.button
-              id="cut-to-admin-btn"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+            <button
               onClick={() => {
                 onOpenAdmin();
                 playSound(900, 0.15);
               }}
-              className="px-6 py-3 rounded-xl font-mono text-xs font-black tracking-widest text-white shadow-lg flex items-center gap-2 cursor-pointer transition-all hover:brightness-110"
+              className="mt-1 px-4 py-2 rounded-xl font-mono text-[11px] font-bold tracking-wider text-slate-700 bg-white border border-slate-200 hover:border-slate-400 hover:text-slate-900 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+            >
+              <Scissors className="w-3.5 h-3.5" style={{ color: currentTheme.accentHex }} />
+              PORTFOLIO ARCHIVE MANAGER
+            </button>
+          )}
+        </div>
+
+        {/* 
+          PRIMARY MEDIA MODE SWITCHER: [ REELS (21) ]  [ VIDEOS (12) ]
+          Strict Separation: These two modes NEVER mix!
+        */}
+        <div
+          style={{
+            opacity: introEntered ? 1 : 0,
+            transform: introEntered ? 'translate3d(0, 0, 0)' : 'translate3d(0, 15px, 0)',
+            transition: 'transform 850ms cubic-bezier(0.22, 1, 0.36, 1) 150ms, opacity 850ms ease 150ms',
+          }}
+          className="flex flex-col items-center gap-3 mb-10 sm:mb-12"
+        >
+          {/* Main Mode Toggle */}
+          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/80 border border-slate-200/90 shadow-sm backdrop-blur-md">
+            <button
+              onClick={() => handleModeChange('reels')}
+              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-mono font-bold tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+                mediaMode === 'reels'
+                  ? 'text-white shadow-md'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+              }`}
               style={{
-                backgroundColor: currentTheme.accentHex,
-                boxShadow: `0 8px 24px ${currentTheme.glowColor}`,
+                backgroundColor: mediaMode === 'reels' ? currentTheme.accentHex || '#E63B2E' : 'transparent',
+                boxShadow: mediaMode === 'reels' ? `0 6px 18px -2px ${currentTheme.glowColor}` : 'none',
               }}
             >
-              <Scissors className="w-3.5 h-3.5 rotate-90" />
-              <span>CUT TO: PORTFOLIO MANAGER</span>
-            </motion.button>
-          )}
-        </div>
+              <Sparkles className="w-4 h-4" />
+              <span>REELS</span>
+              <span className="opacity-75 text-[11px] font-medium ml-0.5">({reelsDataset.length})</span>
+            </button>
 
-        {/* Category Filter Tabs */}
-        <div className="flex flex-wrap justify-center gap-3 mb-16">
-          {[
-            { id: 'all', name: 'Show All', count: reels.length + videos.length },
-            { id: 'reels', name: 'Demo Reels (9:16)', count: reels.length },
-            { id: 'videos', name: 'Featured Videos (16:9)', count: videos.length },
-          ].map((tab) => {
-            const isActive = activeFilter === tab.id;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => {
-                  setActiveFilter(tab.id as any);
-                  playSound(700, 0.08);
-                }}
-                className={`px-4 py-2 rounded-xl text-xs font-mono font-bold tracking-wider transition-all border cursor-pointer ${
-                  isActive
-                    ? 'text-white border-transparent'
-                    : 'text-slate-500 border-slate-200 bg-white/40 hover:text-slate-900 hover:border-slate-300'
-                }`}
-                style={{
-                  backgroundColor: isActive ? currentTheme.accentHex : undefined,
-                  boxShadow: isActive ? `0 4px 12px ${currentTheme.glowColor}` : undefined,
-                }}
-              >
-                {tab.name} <span className="opacity-60 ml-1">({tab.count})</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* CONTAINER 1: DEMO REELS (Vertical 9:16) */}
-        {(activeFilter === 'all' || activeFilter === 'reels') && (
-        <div id="reels-container-section" className="mb-24">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-slate-200/40 pb-4 text-left">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="p-1.5 rounded-lg bg-purple-500/10 text-purple-600">
-                  <Film className="w-4 h-4" />
-                </span>
-                <h3 className="font-sans font-black text-xl md:text-2xl text-slate-900 uppercase tracking-tight">
-                  Demo Reels & Shorts
-                </h3>
-              </div>
-              <p className="text-slate-500 text-xs font-sans max-w-xl">
-                High-impact, rapid-retention vertical edits optimized for TikTok, Instagram, and YouTube Shorts.
-              </p>
-            </div>
-            <div className="font-mono text-[10px] text-slate-400 bg-slate-100 px-3 py-1 rounded-full shrink-0">
-              TIMELINE SYNC: <strong className="text-slate-700">{reels.length} / 20 REELS ACTIVE</strong>
-            </div>
-          </div>
-
-          <div
-            id="reels-grid"
-            className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-8 gap-4"
-          >
-            <AnimatePresence mode="popLayout">
-              {reels.map((project) => (
-                <motion.div
-                  key={project.id}
-                  layout={isLiteMode ? false : "position"}
-                  id={`project-card-${project.id}`}
-                  initial={{ opacity: 0, scale: isLiteMode ? 1.0 : settings.scaleOffset }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: isLiteMode ? 1.0 : settings.scaleOffset }}
-                  transition={{ duration: settings.duration }}
-                  className="group relative rounded-xl glass-card hover:bg-white overflow-hidden shadow-md hover:shadow-xl transition-all flex flex-col justify-between w-full"
-                >
-                  {/* Visual Thumbnail */}
-                  <div
-                    className="relative overflow-hidden bg-black cursor-pointer aspect-[9/16] transition-all duration-300"
-                    onClick={() => {
-                      setLightboxProject(project);
-                      playSound(800, 0.1);
-                    }}
-                  >
-                    <img
-                      src={getFallbackThumbnail(project)}
-                      alt={project.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent opacity-65 group-hover:opacity-40 transition-opacity" />
-
-                    {/* Format tag badge */}
-                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded bg-zinc-950/80 border border-zinc-800 text-[8px] font-mono tracking-widest uppercase text-zinc-400">
-                      9:16 REEL
-                    </span>
-
-                    {/* Play Indicator overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span
-                        className="w-10 h-10 rounded-full flex items-center justify-center text-white shadow-lg"
-                        style={{ backgroundColor: currentTheme.accentHex }}
-                      >
-                        <Play className="w-4 h-4 fill-white stroke-0 ml-0.5" />
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Info Text */}
-                  <div className="p-2.5 flex-1 flex flex-col justify-between text-left gap-1.5">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-[8px] font-mono uppercase tracking-widest text-slate-400">
-                        {project.niche.replace('-', ' ')}
-                      </span>
-                      <h4 className="font-sans font-bold text-xs text-slate-900 group-hover:text-slate-850 transition-colors line-clamp-1">
-                        {project.title}
-                      </h4>
-                      <p className="text-slate-500 text-[10px] line-clamp-2 leading-normal">
-                        {project.description}
-                      </p>
-                    </div>
-
-                    {/* Card spec details foot */}
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-2 text-[9px] font-mono text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-2.5 h-2.5" />
-                        {project.duration || '0:30'}
-                      </span>
-                      <span className="truncate max-w-[70px]" style={{ color: currentTheme.accentHex }}>
-                        {project.software?.[0] || 'Premiere'}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-
-          {reels.length === 0 && (
-            <div className="py-12 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50 flex flex-col items-center justify-center">
-              <Film className="w-6 h-6 text-slate-400 mb-2" />
-              <p className="font-mono text-xs text-slate-500">NO REEL ELEMENTS INSERTED YET</p>
-              {onOpenAdmin && (
-                <button
-                  onClick={() => {
-                    onOpenAdmin();
-                    playSound(400);
-                  }}
-                  className="mt-3 px-4 py-1.5 rounded-lg text-[10px] font-mono border border-slate-200 hover:border-slate-300 bg-white shadow-sm hover:shadow text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
-                >
-                  + Add Reel via Cut Room
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-        )}
-
-        {/* CONTAINER 2: FEATURED VIDEOS (Horizontal 16:9) */}
-        {(activeFilter === 'all' || activeFilter === 'videos') && (
-        <div id="videos-container-section">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8 border-b border-slate-200/40 pb-4 text-left">
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="p-1.5 rounded-lg bg-emerald-500/10 text-emerald-600">
-                  <Play className="w-4 h-4" />
-                </span>
-                <h3 className="font-sans font-black text-xl md:text-2xl text-slate-900 uppercase tracking-tight">
-                  Featured Videos
-                </h3>
-              </div>
-              <p className="text-slate-500 text-xs font-sans max-w-xl">
-                Cinematic horizontal narratives, interactive graphics, YouTube vlogs, and standard professional promotions.
-              </p>
-            </div>
-            <div className="font-mono text-[10px] text-slate-400 bg-slate-100 px-3 py-1 rounded-full shrink-0">
-              TIMELINE SYNC: <strong className="text-slate-700">{videos.length} / 20 VIDEOS ACTIVE</strong>
-            </div>
-          </div>
-
-          <div
-            id="videos-grid"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-          >
-            <AnimatePresence mode="popLayout">
-              {videos.map((project) => (
-                <motion.div
-                  key={project.id}
-                  layout={isLiteMode ? false : "position"}
-                  id={`project-card-${project.id}`}
-                  initial={{ opacity: 0, scale: isLiteMode ? 1.0 : settings.scaleOffset }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: isLiteMode ? 1.0 : settings.scaleOffset }}
-                  transition={{ duration: settings.duration }}
-                  className="group relative rounded-xl glass-card hover:bg-white overflow-hidden shadow-md hover:shadow-xl transition-all flex flex-col justify-between w-full"
-                >
-                  {/* Visual Thumbnail */}
-                  <div
-                    className="relative overflow-hidden bg-black cursor-pointer aspect-video transition-all duration-300"
-                    onClick={() => {
-                      setLightboxProject(project);
-                      playSound(800, 0.1);
-                    }}
-                  >
-                    <img
-                      src={getFallbackThumbnail(project)}
-                      alt={project.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 opacity-80 group-hover:opacity-100"
-                      loading="lazy"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/90 via-transparent to-transparent opacity-65 group-hover:opacity-40 transition-opacity" />
-
-                    {/* Format tag badge */}
-                    <span className="absolute top-3 left-3 px-2 py-0.5 rounded bg-zinc-950/80 border border-zinc-800 text-[8px] font-mono tracking-widest uppercase text-zinc-400">
-                      {project.type.toUpperCase()}
-                    </span>
-
-                    {/* Play Indicator overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <span
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg"
-                        style={{ backgroundColor: currentTheme.accentHex }}
-                      >
-                        <Play className="w-5 h-5 fill-white stroke-0 ml-0.5" />
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Info Text */}
-                  <div className="p-4 flex-1 flex flex-col justify-between text-left gap-3">
-                    <div className="flex flex-col gap-1.5">
-                      <span className="text-[9px] font-mono uppercase tracking-widest text-slate-400">
-                        {project.niche.replace('-', ' ')}
-                      </span>
-                      <h4 className="font-sans font-bold text-sm text-slate-900 group-hover:text-slate-850 transition-colors line-clamp-1">
-                        {project.title}
-                      </h4>
-                      <p className="text-slate-600 text-xs line-clamp-2 leading-relaxed">
-                        {project.description}
-                      </p>
-                    </div>
-
-                    {/* Card spec details foot */}
-                    <div className="flex items-center justify-between border-t border-slate-100 pt-3 text-[9px] font-mono text-slate-400">
-                      <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {project.duration || '0:45'}
-                      </span>
-                      <span className="truncate max-w-[130px]" style={{ color: currentTheme.accentHex }}>
-                        {project.software?.[0] || 'Adobe Suite'}
-                      </span>
-                    </div>
-                  </div>
-                </motion.div>
-              ))}
-            </AnimatePresence>
-          </div>
-
-          {videos.length === 0 && (
-            <div className="py-12 text-center border border-dashed border-slate-200 rounded-xl bg-slate-50 flex flex-col items-center justify-center">
-              <Play className="w-6 h-6 text-slate-400 mb-2" />
-              <p className="font-mono text-xs text-slate-500">NO VIDEO ELEMENTS INSERTED YET</p>
-              {onOpenAdmin && (
-                <button
-                  onClick={() => {
-                    onOpenAdmin();
-                    playSound(400);
-                  }}
-                  className="mt-3 px-4 py-1.5 rounded-lg text-[10px] font-mono border border-slate-200 hover:border-slate-300 bg-white shadow-sm hover:shadow text-slate-600 hover:text-slate-900 transition-all cursor-pointer"
-                >
-                  + Add Video via Cut Room
-                </button>
-              )}
-            </div>
-          )}
-        </div>
-        )}
-
-      </div>
-
-      {/* Immersive Project Detail Overlay */}
-      <AnimatePresence>
-        {lightboxProject && (
-          <div
-            id="lightbox-container"
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8 bg-black/98 backdrop-blur-xl overflow-y-auto"
-            onClick={(e) => {
-              if (e.target === e.currentTarget) {
-                setLightboxProject(null);
-                playSound(300);
-              }
-            }}
-          >
-            <motion.div
-              initial={isLiteMode ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: settings.yOffset }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={isLiteMode ? { opacity: 0 } : { opacity: 0, scale: 0.95, y: settings.yOffset }}
-              transition={{ duration: settings.duration }}
-              className="w-full max-w-5xl rounded-2xl border border-zinc-850 bg-[#06060a] overflow-hidden shadow-2xl flex flex-col md:flex-row relative my-auto"
-              onClick={(e) => e.stopPropagation()}
+            <button
+              onClick={() => handleModeChange('videos')}
+              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-mono font-bold tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer ${
+                mediaMode === 'videos'
+                  ? 'text-white shadow-md'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+              }`}
+              style={{
+                backgroundColor: mediaMode === 'videos' ? currentTheme.accentHex || '#E63B2E' : 'transparent',
+                boxShadow: mediaMode === 'videos' ? `0 6px 18px -2px ${currentTheme.glowColor}` : 'none',
+              }}
             >
-              {/* Close Button */}
+              <Film className="w-4 h-4" />
+              <span>VIDEOS</span>
+              <span className="opacity-75 text-[11px] font-medium ml-0.5">({videosDataset.length})</span>
+            </button>
+          </div>
+
+          {/* Secondary Sub-Category Filter (Strictly filtered within active mode) */}
+          {availableNiches.length > 1 && (
+            <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1">
               <button
-                id="lightbox-close-btn"
                 onClick={() => {
-                  setLightboxProject(null);
-                  playSound(300);
+                  setSelectedNiche('all');
+                  setActiveIndex(0);
+                  playSound(600, 0.03);
                 }}
-                className="absolute top-4 right-4 z-30 p-2 rounded-full bg-black/80 border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 hover:scale-105 transition-all shadow-md"
+                className={`px-3 py-1 rounded-lg text-[10px] font-mono font-semibold transition-all border cursor-pointer ${
+                  selectedNiche === 'all'
+                    ? 'bg-slate-900 text-white border-slate-900'
+                    : 'bg-white/60 text-slate-500 border-slate-200 hover:text-slate-900 hover:border-slate-300'
+                }`}
               >
-                <X className="w-4 h-4" />
+                All {mediaMode === 'reels' ? 'Reels' : 'Videos'} ({activeModeProjects.length})
               </button>
+              {availableNiches.map((niche) => {
+                const isActive = selectedNiche === niche.id;
+                return (
+                  <button
+                    key={niche.id}
+                    onClick={() => {
+                      setSelectedNiche(niche.id);
+                      setActiveIndex(0);
+                      playSound(600, 0.03);
+                    }}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-mono font-semibold transition-all border cursor-pointer ${
+                      isActive
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white/60 text-slate-500 border-slate-200 hover:text-slate-900 hover:border-slate-300'
+                    }`}
+                  >
+                    {niche.name} ({niche.count})
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
 
-              {/* Left Column: Visual Media Display with ambient glow */}
-              <div className={`flex-1 bg-black flex items-center justify-center relative p-3 ${
-                lightboxProject.aspectRatio === '9:16'
-                  ? 'aspect-[9/16] h-[380px] sm:h-[480px] md:h-[620px] max-h-[80vh] md:max-h-none'
-                  : 'aspect-video md:aspect-auto md:min-h-[480px]'
-              }`}>
-                {/* Accent glow in background */}
-                <div 
-                  className="absolute inset-0 opacity-20 blur-[120px] pointer-events-none transition-all duration-1000"
-                  style={{ backgroundColor: currentTheme.accentHex }}
-                />
+        {/* 
+          STATE 02, 03, 04, 05: CINEMATIC 3D CURVED PROJECT GALLERY STAGE
+        */}
+        {filteredProjects.length > 0 ? (
+          <div
+            style={{
+              opacity: isModeTransitioning ? 0 : introEntered ? 1 : 0,
+              transform: isModeTransitioning
+                ? 'translate3d(0, 16px, -60px) scale(0.93)'
+                : introEntered
+                ? 'translate3d(0, 0, 0) scale(1)'
+                : 'translate3d(0, 30px, 0)',
+              transition: isModeTransitioning
+                ? 'opacity 300ms ease, transform 300ms cubic-bezier(0.22, 1, 0.36, 1)'
+                : 'opacity 500ms ease, transform 500ms cubic-bezier(0.22, 1, 0.36, 1)',
+            }}
+            className="w-full flex flex-col items-center overflow-visible"
+          >
+            <CurvedGalleryStage
+              projects={filteredProjects}
+              activeIndex={safeActiveIndex}
+              setActiveIndex={setActiveIndex}
+              mediaMode={mediaMode}
+              currentTheme={currentTheme}
+              isLiteMode={isLiteMode}
+              isTouch={isTouch}
+              isFocusingProject={isFocusing}
+              scrollExitProgress={scrollExitProgress}
+              onSelectProject={handleOpenProjectFocus}
+              onHoverChange={setIsHovered}
+              onDragChange={setIsDragging}
+              isPaused={isPaused}
+              onTogglePause={() => setIsPaused((prev) => !prev)}
+            />
 
-                <div className={`w-full h-full relative flex items-center justify-center ${
-                  lightboxProject.aspectRatio === '9:16' ? 'max-w-[320px] mx-auto rounded-xl overflow-hidden border border-zinc-800/40 shadow-2xl bg-zinc-950' : ''
-                }`}>
-                  {isYouTube(lightboxProject.link) ? (
-                    <iframe
-                      id="lightbox-iframe-player"
-                      src={getYouTubeEmbedUrl(lightboxProject.link)}
-                      className="w-full h-full border-0 absolute inset-0 rounded-lg"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      title={lightboxProject.title}
-                    />
-                  ) : isVimeo(lightboxProject.link) ? (
-                    <iframe
-                      id="lightbox-vimeo-player"
-                      src={getVimeoEmbedUrl(lightboxProject.link)}
-                      className="w-full h-full border-0 absolute inset-0 rounded-lg"
-                      allow="autoplay; fullscreen; picture-in-picture"
-                      allowFullScreen
-                      title={lightboxProject.title}
-                    />
-                  ) : isInstagram(lightboxProject.link) ? (
-                    <div className="w-full h-full absolute inset-0 overflow-hidden rounded-lg bg-zinc-950 border border-zinc-850">
-                      <img
-                        src={getFallbackThumbnail(lightboxProject)}
-                        alt={lightboxProject.title}
-                        className="w-full h-full object-cover opacity-70"
-                        referrerPolicy="no-referrer"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black via-black/40 to-transparent" />
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center gap-4">
-                        <div className="w-14 h-14 rounded-full bg-gradient-to-tr from-yellow-500 via-red-500 to-purple-600 flex items-center justify-center shadow-lg">
-                          <Play className="w-6 h-6 text-white fill-white ml-0.5" />
-                        </div>
-                        <div className="flex flex-col gap-1.5 max-w-xs">
-                          <h4 className="text-white font-bold text-sm">Instagram Reel / Video</h4>
-                          <p className="text-[10px] text-zinc-200 leading-relaxed">
-                            Instagram embeds are restricted, so this preview opens in Instagram for the best quality and full playback.
-                          </p>
-                        </div>
-                        <a
-                          href={lightboxProject.link}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-5 py-2 rounded-xl font-bold font-mono text-[9px] tracking-widest text-white transition-all bg-gradient-to-r from-yellow-500 via-red-500 to-purple-600 hover:brightness-110 shadow-md cursor-pointer uppercase"
-                        >
-                          Watch on Instagram ↗
-                        </a>
-                      </div>
-                    </div>
-                  ) : isVideoFile(lightboxProject.link) ? (
-                    <div className="w-full h-full relative flex items-center justify-center">
-                      <video
-                        id="lightbox-native-player"
-                        src={isCloudinary(lightboxProject.link)
-                          ? getCloudinaryOptimizedVideo(lightboxProject.link, { quality: 'best' })
-                          : lightboxProject.link}
-                        poster={getFallbackThumbnail(lightboxProject)}
-                        controls
-                        autoPlay
-                        playsInline
-                        preload="auto"
-                        className={`w-full h-full absolute inset-0 rounded-lg bg-black ${
-                          lightboxProject.aspectRatio === '9:16' ? 'object-cover' : 'object-contain'
-                        }`}
-                        style={{ imageRendering: 'high-quality', transform: 'translateZ(0)' }}
-                      />
-                      {/* High-Fidelity Quality Indicator Badge */}
-                      <div className="absolute top-3 left-3 z-20 flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-black/80 border border-emerald-500/50 text-[9px] font-mono text-emerald-300 backdrop-blur-md shadow-lg pointer-events-none">
-                        <Sparkles className="w-3 h-3 text-emerald-400" />
-                        <span>{isCloudinary(lightboxProject.link) ? 'CLOUDINARY MASTER HD' : 'HIGH-RES DIRECT MASTER'}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    <img
-                      id="lightbox-image-preview"
-                      src={lightboxProject.link}
-                      alt={lightboxProject.title}
-                      className="w-full h-full object-contain p-2 absolute inset-0 rounded-lg"
-                      referrerPolicy="no-referrer"
-                    />
-                  )}
-                </div>
-              </div>
+            {/* STATE 06: Active Project Information Reveal */}
+            <ActiveProjectInfo
+              project={activeProject}
+              currentIndex={safeActiveIndex}
+              totalProjects={filteredProjects.length}
+              currentTheme={currentTheme}
+              onOpenViewer={handleOpenProjectFocus}
+              isLiteMode={isLiteMode}
+            />
 
-              {/* Right Column: Elaborate Specifications & Advanced Metadata */}
-              <div className="w-full md:w-[420px] border-t md:border-t-0 md:border-l border-zinc-850/80 p-6 md:p-8 flex flex-col gap-6 text-left bg-[#09090e]/80 overflow-y-auto max-h-[85vh] md:max-h-[620px]">
-                {/* Category Header */}
-                <div className="flex flex-col gap-2">
-                  <div className="flex items-center gap-2">
-                    <span 
-                      className="px-2 py-0.5 rounded text-[8px] font-mono tracking-widest text-white font-black uppercase"
-                      style={{ backgroundColor: currentTheme.accentHex }}
-                    >
-                      {lightboxProject.niche.replace('-', ' ')}
-                    </span>
-                    <span className="text-[9px] font-mono text-zinc-500 uppercase tracking-widest">
-                      {lightboxProject.type} format
-                    </span>
-                  </div>
-                  
-                  <h3 className="font-sans font-black text-xl text-white leading-tight">
-                    {lightboxProject.title}
-                  </h3>
-                </div>
-
-                {/* Extended Narrative Story or Description */}
-                <div className="flex flex-col gap-1.5 border-t border-zinc-900 pt-4">
-                  <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">
-                    EDITORIAL STORY / PROFILE
-                  </span>
-                  <p className="text-zinc-350 text-xs leading-relaxed font-sans">
-                    {lightboxProject.fullDescription || lightboxProject.description}
-                  </p>
-                </div>
-
-                {/* Advanced Specifications List */}
-                <div className="flex flex-col gap-3 border-t border-zinc-900 pt-4">
-                  <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">
-                    TECHNICAL PRODUCTION PROFILE
-                  </span>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-[11px] font-mono">
-                    <div className="flex items-start gap-2 text-zinc-400">
-                      <Briefcase className="w-3.5 h-3.5 text-zinc-600 shrink-0 mt-0.5" />
-                      <div className="flex flex-col">
-                        <span className="text-[8px] text-zinc-600 uppercase tracking-wider">Client / Creator</span>
-                        <span className="text-zinc-200 font-medium truncate max-w-[150px]">{lightboxProject.client || 'Independent Production'}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-zinc-400">
-                      <Clock className="w-3.5 h-3.5 text-zinc-600 shrink-0 mt-0.5" />
-                      <div className="flex flex-col">
-                        <span className="text-[8px] text-zinc-600 uppercase tracking-wider">Timeline Duration</span>
-                        <span className="text-zinc-200 font-medium">{lightboxProject.duration || '0:45'}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-zinc-400">
-                      <User className="w-3.5 h-3.5 text-zinc-600 shrink-0 mt-0.5" />
-                      <div className="flex flex-col">
-                        <span className="text-[8px] text-zinc-600 uppercase tracking-wider">Assigned Role</span>
-                        <span className="text-zinc-200 font-medium">{lightboxProject.role || 'Lead Editor'}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-zinc-400">
-                      <Monitor className="w-3.5 h-3.5 text-zinc-600 shrink-0 mt-0.5" />
-                      <div className="flex flex-col">
-                        <span className="text-[8px] text-zinc-600 uppercase tracking-wider">Resolution Profiling</span>
-                        <span className="text-zinc-200 font-medium">{lightboxProject.resolution || '1080p Web Standard'}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-zinc-400">
-                      <Cpu className="w-3.5 h-3.5 text-zinc-600 shrink-0 mt-0.5" />
-                      <div className="flex flex-col">
-                        <span className="text-[8px] text-zinc-600 uppercase tracking-wider">Frame Rate</span>
-                        <span className="text-zinc-200 font-medium">{lightboxProject.frameRate || '24 FPS Cinematic'}</span>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2 text-zinc-400">
-                      <Palette className="w-3.5 h-3.5 text-zinc-600 shrink-0 mt-0.5" />
-                      <div className="flex flex-col">
-                        <span className="text-[8px] text-zinc-600 uppercase tracking-wider">Color Grade LUT</span>
-                        <span className="text-zinc-200 font-medium">{lightboxProject.colorGrade || 'Rec.709 Space'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {lightboxProject.audioSpecs && (
-                    <div className="flex items-start gap-2 text-zinc-400 text-[11px] font-mono border-t border-zinc-900/50 pt-3 mt-1">
-                      <Volume2 className="w-3.5 h-3.5 text-zinc-600 shrink-0 mt-0.5" />
-                      <div className="flex flex-col">
-                        <span className="text-[8px] text-zinc-600 uppercase tracking-wider">Audio Engineering Specs</span>
-                        <span className="text-zinc-200 font-medium">{lightboxProject.audioSpecs}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Behind The Scenes: Challenges and Solutions */}
-                {(lightboxProject.challenges || lightboxProject.solutions) && (
-                  <div className="flex flex-col gap-3 border-t border-zinc-900 pt-4">
-                    <span className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">
-                      BEHIND THE TIMELINE
-                    </span>
-                    
-                    <div className="grid grid-cols-1 gap-3">
-                      {lightboxProject.challenges && (
-                        <div className="p-3 rounded-lg border border-amber-950/30 bg-amber-950/10 flex flex-col gap-1 text-left">
-                          <div className="flex items-center gap-1.5 text-amber-500 font-mono text-[9px] tracking-wider uppercase font-semibold">
-                            <Wrench className="w-3 h-3" />
-                            <span>Creative Challenge</span>
-                          </div>
-                          <p className="text-zinc-300 text-xs leading-relaxed font-sans">
-                            {lightboxProject.challenges}
-                          </p>
-                        </div>
-                      )}
-
-                      {lightboxProject.solutions && (
-                        <div className="p-3 rounded-lg border border-emerald-950/30 bg-emerald-950/10 flex flex-col gap-1 text-left">
-                          <div className="flex items-center gap-1.5 text-emerald-500 font-mono text-[9px] tracking-wider uppercase font-semibold">
-                            <CheckCircle2 className="w-3 h-3" />
-                            <span>Professional Solution</span>
-                          </div>
-                          <p className="text-zinc-300 text-xs leading-relaxed font-sans">
-                            {lightboxProject.solutions}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Software engines utilized */}
-                {lightboxProject.software && lightboxProject.software.length > 0 && (
-                  <div className="border-t border-zinc-900 pt-4 mt-auto">
-                    <p className="text-[8px] font-mono text-zinc-600 tracking-widest uppercase mb-2">ENGINES & TOOLS</p>
-                    <div className="flex flex-wrap gap-1">
-                      {lightboxProject.software.map((sw) => (
-                        <span
-                          key={sw}
-                          className="px-2 py-0.5 rounded text-[8px] font-mono text-zinc-300 border border-zinc-800 bg-zinc-900/60"
-                        >
-                          {sw}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </motion.div>
+            {/* STATE 09 & 10: Gallery Navigation & Continuous Infinite Cycle Controls */}
+            <GalleryNavigation
+              onPrev={handlePrev}
+              onNext={handleNext}
+              currentIndex={safeActiveIndex}
+              totalProjects={filteredProjects.length}
+              currentTheme={currentTheme}
+              onSelectIndex={(idx) => {
+                setActiveIndex(idx);
+                playSound(650, 0.04);
+              }}
+              isPaused={isPaused}
+              onTogglePause={() => {
+                setIsPaused((prev) => !prev);
+                playSound(isPaused ? 800 : 500, 0.04);
+              }}
+              motionDirection={motionDirection}
+              onToggleDirection={() => {
+                setMotionDirection((d) => (d === 'ltr' ? 'rtl' : 'ltr'));
+                playSound(700, 0.05);
+              }}
+            />
+          </div>
+        ) : (
+          <div className="py-20 text-center border border-dashed border-slate-200 rounded-3xl bg-white/40 flex flex-col items-center justify-center">
+            <Film className="w-8 h-8 text-slate-400 mb-2" />
+            <p className="font-mono text-xs text-slate-500 uppercase tracking-widest">
+              No projects found in this category
+            </p>
           </div>
         )}
-      </AnimatePresence>
+      </div>
     </section>
   );
 }

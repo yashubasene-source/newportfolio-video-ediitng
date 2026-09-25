@@ -81,3 +81,167 @@
 .animate-glow-2 {
   animation: float-reverse 25s infinite ease-in-out;
 }
+
+/* Kinetic Typography Layer Animations */
+@keyframes kinetic-fill {
+  0% {
+    transform: translate3d(-18px, 0px, 0);
+  }
+  25% {
+    transform: translate3d(0px, -1.5px, 0);
+  }
+  50% {
+    transform: translate3d(18px, 0px, 0);
+  }
+  75% {
+    transform: translate3d(0px, 1.5px, 0);
+  }
+  100% {
+    transform: translate3d(-18px, 0px, 0);
+  }
+}
+
+@keyframes kinetic-outline {
+  0% {
+    transform: translate3d(22px, 0px, 0);
+  }
+  25% {
+    transform: translate3d(0px, 1.5px, 0);
+  }
+  50% {
+    transform: translate3d(-22px, 0px, 0);
+  }
+  75% {
+    transform: translate3d(0px, -1.5px, 0);
+  }
+  100% {
+    transform: translate3d(22px, 0px, 0);
+  }
+}
+
+.animate-kinetic-fill {
+  animation: kinetic-fill 3.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  will-change: transform;
+}
+
+.animate-kinetic-outline {
+  animation: kinetic-outline 3.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  will-change: transform;
+}
+
+/* Accent Pillar Subtle Scale/Pulse */
+@keyframes pillar-pulse {
+  0%, 100% {
+    transform: scaleY(0.98);
+  }
+  50% {
+    transform: scaleY(1.02);
+  }
+}
+
+.animate-pillar-pulse {
+  animation: pillar-pulse 5s ease-in-out infinite;
+  transform-origin: center;
+  will-change: transform;
+}
+
+/* Card Floating Keyframes (asynchronous durations) */
+@keyframes card-float-1 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-4px, -16px, 0); }
+}
+@keyframes card-float-2 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(4px, 12px, 0); }
+}
+@keyframes card-float-3 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0px, -12px, 0); }
+}
+@keyframes card-float-4 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(4px, 14px, 0); }
+}
+@keyframes card-float-5 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-4px, -14px, 0); }
+}
+@keyframes card-float-6 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(3px, 10px, 0); }
+}
+@keyframes card-float-7 {
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-3px, -10px, 0); }
+}
+
+.animate-float-1 { animation: card-float-1 6.2s ease-in-out infinite; will-change: transform; }
+.animate-float-2 { animation: card-float-2 7.1s ease-in-out infinite; will-change: transform; }
+.animate-float-3 { animation: card-float-3 8.4s ease-in-out infinite; will-change: transform; }
+.animate-float-4 { animation: card-float-4 5.8s ease-in-out infinite; will-change: transform; }
+.animate-float-5 { animation: card-float-5 9.2s ease-in-out infinite; will-change: transform; }
+.animate-float-6 { animation: card-float-6 6.8s ease-in-out infinite; will-change: transform; }
+.animate-float-7 { animation: card-float-7 7.6s ease-in-out infinite; will-change: transform; }
+
+/* Text outline utilities */
+.text-stroke-editorial {
+  -webkit-text-stroke: 1.5px #0f172a;
+  color: transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-kinetic-fill,
+  .animate-kinetic-outline,
+  .animate-pillar-pulse,
+  .animate-float-1,
+  .animate-float-2,
+  .animate-float-3,
+  .animate-float-4,
+  .animate-float-5,
+  .animate-float-6,
+  .animate-float-7,
+  .animate-motion-track-scan,
+  .animate-reticle-pulse {
+    animation: none !important;
+    transform: none !important;
+  }
+}
+
+/* Animated Center Motion Track Scanning Highlight (Step 8: Line ●────────────>) */
+@keyframes motion-track-scan {
+  0% {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  85% {
+    opacity: 0.95;
+  }
+  100% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.animate-motion-track-scan {
+  animation: motion-track-scan 3.2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  will-change: transform, opacity;
+}
+
+@keyframes reticle-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: 1;
+    box-shadow: 0 0 16px rgba(255, 255, 255, 0.9);
+  }
+}
+
+.animate-reticle-pulse {
+  animation: reticle-pulse 2.4s ease-in-out infinite;
+}

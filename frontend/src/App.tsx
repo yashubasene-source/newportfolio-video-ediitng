@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'motion/react';
 import { MessageCircle } from 'lucide-react';
 import { Project, ThemeColors } from './types';
@@ -22,8 +22,10 @@ import Skills from './components/Skills';
 import FAQ from './components/FAQ';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
-import AdminPanel from './components/AdminPanel';
-import AuditReport from './components/AuditReport';
+import ProjectViewer from './components/ProjectViewer';
+
+const AdminPanel = lazy(() => import('./components/AdminPanel'));
+const AuditReport = lazy(() => import('./components/AuditReport'));
 
 // Performance motion system imports
 import { PerformanceProvider, usePerformance } from './motion/performanceManager';
@@ -51,6 +53,7 @@ function MainContent() {
   const [currentTheme, setCurrentTheme] = useState<ThemeColors>(THEMES[0]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [siteConfig, setSiteConfig] = useState<any>(null);
+  const [selectedProject, setSelectedProject] = useState<Project | null>(null);
   const [timecode, setTimecode] = useState('00:00:00:00');
 
   // Grab performance capability from context
@@ -244,9 +247,22 @@ function MainContent() {
 
           {/* Main sections */}
           <main className="flex-1">
-            <Hero currentTheme={currentTheme} soundEnabled={soundEnabled} heroConfig={siteConfig?.hero} />
+            <Hero
+              currentTheme={currentTheme}
+              soundEnabled={soundEnabled}
+              heroConfig={siteConfig?.hero}
+              projectsList={projects}
+              onSelectProject={setSelectedProject}
+            />
             <ClientStrip />
-            <Showcase currentTheme={currentTheme} soundEnabled={soundEnabled} projectsList={projects} onOpenAdmin={() => setAdminOpen(true)} />
+            <Showcase
+              currentTheme={currentTheme}
+              soundEnabled={soundEnabled}
+              projectsList={projects}
+              onOpenAdmin={() => setAdminOpen(true)}
+              onSelectProject={setSelectedProject}
+              isViewerOpen={Boolean(selectedProject) || adminOpen}
+            />
             <BeforeAfter
               currentTheme={currentTheme}
               soundEnabled={soundEnabled}
@@ -269,16 +285,30 @@ function MainContent() {
           </div>
 
           {/* Portfolio Manager System Admin Modal */}
-          <AdminPanel
-            isOpen={adminOpen}
-            onClose={() => setAdminOpen(false)}
+          {adminOpen && (
+            <Suspense fallback={null}>
+              <AdminPanel
+                isOpen={adminOpen}
+                onClose={() => setAdminOpen(false)}
+                currentTheme={currentTheme}
+                soundEnabled={soundEnabled}
+                projects={projects}
+                setProjects={handleUpdateProjects}
+                onResetDefaults={handleResetDefaults}
+                siteConfig={siteConfig}
+                setSiteConfig={handleUpdateSiteConfig}
+              />
+            </Suspense>
+          )}
+
+          {/* Project Details Lightbox Viewer */}
+          <ProjectViewer
+            project={selectedProject}
+            onClose={() => setSelectedProject(null)}
             currentTheme={currentTheme}
-            soundEnabled={soundEnabled}
-            projects={projects}
-            setProjects={handleUpdateProjects}
-            onResetDefaults={handleResetDefaults}
-            siteConfig={siteConfig}
-            setSiteConfig={handleUpdateSiteConfig}
+            allProjects={projects}
+            onSelectRelated={(p) => setSelectedProject(p)}
+            isLiteMode={isLiteMode}
           />
 
           {/* Floating WhatsApp Action Button (Dynamic transitions based on capability) */}
@@ -304,12 +334,16 @@ function MainContent() {
           </motion.a>
 
           {/* Security and responsive design audit reports */}
-          <AuditReport
-            isOpen={reportOpen}
-            onClose={() => setReportOpen(false)}
-            currentTheme={currentTheme}
-            soundEnabled={soundEnabled}
-          />
+          {reportOpen && (
+            <Suspense fallback={null}>
+              <AuditReport
+                isOpen={reportOpen}
+                onClose={() => setReportOpen(false)}
+                currentTheme={currentTheme}
+                soundEnabled={soundEnabled}
+              />
+            </Suspense>
+          )}
         </div>
       )}
     </div>

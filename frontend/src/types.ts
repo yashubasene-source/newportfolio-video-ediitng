@@ -12,14 +12,25 @@ export interface Project {
   type: ProjectType;
   niche: NicheType;
   title: string;
+  slug?: string;
   description: string;
+  shortDescription?: string;
   link: string; // YouTube URL, MP4 link, or Image URL
-  thumbnail?: string; // Optional custom thumbnail URL
+  videoUrl?: string;
+  thumbnail?: string; // Optional custom thumbnail / poster URL
+  poster?: string; // Direct poster URL (synonym for thumbnail)
+  previewVideo?: string; // Small compressed preview video URL for hover
+  fullVideo?: string; // High quality full video URL
   software?: string[]; // e.g. ["Premiere Pro", "After Effects"]
   duration?: string; // e.g. "0:45" or "12:15"
   role?: string; // e.g. "Lead Editor", "VFX Artist"
   createdAt?: string; // e.g. "2026"
-  aspectRatio?: '9:16' | '16:9'; // Added for vertical reel vs landscape video grid system
+  aspectRatio?: '9:16' | '16:9' | '1:1' | '4:5'; // Added for vertical reel vs landscape video grid system
+  mediaType?: 'reel' | 'video'; // Strictly separated media mode: 'reel' (9:16 vertical) vs 'video' (landscape)
+  featured?: boolean;
+  order?: number;
+  tags?: string[];
+  status?: 'draft' | 'published';
   
   // Extra detailed project metadata for full-screen detail overlay
   client?: string; // e.g. "TechCorp", "Gaming Influencer"

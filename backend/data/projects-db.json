@@ -13,7 +13,8 @@
       "Adobe Suite"
     ],
     "createdAt": "2026",
-    "aspectRatio": "9:16"
+    "aspectRatio": "9:16",
+    "mediaType": "reel"
   },
   {
     "id": "custom-1783145606351",
@@ -39,7 +40,8 @@
     "audioSpecs": "Mastered Stereo Sound",
     "challenges": "Color matching different camera profiles under varying lighting.",
     "solutions": "Applied customized rec.709 conversion LUTs in DaVinci Resolve.",
-    "fullDescription": "A professional portfolio reel summarizing editing styles, transition pacing, and color grading projects."
+    "fullDescription": "A professional portfolio reel summarizing editing styles, transition pacing, and color grading projects.",
+    "mediaType": "video"
   },
   {
     "id": "yt-jNgC6LArGBo",
@@ -64,7 +66,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-5OUflp7xBow",
@@ -88,7 +91,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-JtJ8JtysMYw",
@@ -113,7 +117,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-Bbxj8Fr_m8k",
@@ -138,7 +143,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-PXZyMT9ZnL4",
@@ -162,7 +168,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-CsstuW6bIXw",
@@ -186,7 +193,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-4RDrmm_QBZw",
@@ -211,7 +219,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-_gVvYlMeuLw",
@@ -235,7 +244,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-4Ku6Ve7zIHY",
@@ -260,7 +270,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-V_V1EGIMNj0",
@@ -285,7 +296,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "video"
   },
   {
     "id": "yt-He4asxOy3CQ",
@@ -309,7 +321,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "video"
   },
   {
     "id": "yt-z1h96HEBA8g",
@@ -334,7 +347,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "video"
   },
   {
     "id": "yt-D4qD8ZG4MIE",
@@ -358,7 +372,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Building smooth and responsive vector animations without drop-frames.",
     "solutions": "Optimized pre-compositions and utilized motion blur maps.",
-    "fullDescription": "Creative motion graphic presentation designed to highlight core elements through dynamic layouts."
+    "fullDescription": "Creative motion graphic presentation designed to highlight core elements through dynamic layouts.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-XRrLmvfPpKM",
@@ -383,7 +398,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Pacing documentary narrative sections with appropriate background ambient sound cues.",
     "solutions": "Implemented audio-ducking tracks and conformed sound levels to standards.",
-    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches."
+    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-0PmcMrtTJlM",
@@ -408,7 +424,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Pacing documentary narrative sections with appropriate background ambient sound cues.",
     "solutions": "Implemented audio-ducking tracks and conformed sound levels to standards.",
-    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches."
+    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches.",
+    "mediaType": "video"
   },
   {
     "id": "yt-I3fNfDbYT_M",
@@ -433,7 +450,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-avDr-1331LU",
@@ -458,7 +476,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Framing fast action edits and adding pop culture elements in a natural flow.",
     "solutions": "Leveraged whip transitions and visual text captions to guide viewer focus.",
-    "fullDescription": "A fun and engaging lifestyle video featuring custom zoom ramps and funny meme inserts to capture focus."
+    "fullDescription": "A fun and engaging lifestyle video featuring custom zoom ramps and funny meme inserts to capture focus.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-kj55nEi4sYE",
@@ -483,7 +502,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-dsxddBiZ-Ek",
@@ -507,7 +527,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "video"
   },
   {
     "id": "yt-coYHW222eFs",
@@ -531,7 +552,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "video"
   },
   {
     "id": "yt-g0ZplnuAQUM",
@@ -556,7 +578,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Pacing documentary narrative sections with appropriate background ambient sound cues.",
     "solutions": "Implemented audio-ducking tracks and conformed sound levels to standards.",
-    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches."
+    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-QAo0moIKqMg",
@@ -580,7 +603,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-BbWgPZrcxck",
@@ -604,7 +628,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-d6dCSs67AOI",
@@ -629,7 +654,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Framing fast action edits and adding pop culture elements in a natural flow.",
     "solutions": "Leveraged whip transitions and visual text captions to guide viewer focus.",
-    "fullDescription": "A fun and engaging lifestyle video featuring custom zoom ramps and funny meme inserts to capture focus."
+    "fullDescription": "A fun and engaging lifestyle video featuring custom zoom ramps and funny meme inserts to capture focus.",
+    "mediaType": "video"
   },
   {
     "id": "yt-GzTTDmcxJ3s",
@@ -653,7 +679,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-Y9moP0Zoax8",
@@ -678,7 +705,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Maintaining visual continuity across different scenes and audio levels.",
     "solutions": "Normalized color tones in DaVinci Resolve and calibrated voice compressors.",
-    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts."
+    "fullDescription": "Professional clean video edit showcasing smooth B-roll sequences and seamless storytelling cuts.",
+    "mediaType": "video"
   },
   {
     "id": "yt-Q-z70AQ_LEM",
@@ -702,7 +730,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-nPS2mbhDqY0",
@@ -726,7 +755,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "reel"
   },
   {
     "id": "yt-gfHHf6p3VrA",
@@ -751,7 +781,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Pacing documentary narrative sections with appropriate background ambient sound cues.",
     "solutions": "Implemented audio-ducking tracks and conformed sound levels to standards.",
-    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches."
+    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches.",
+    "mediaType": "video"
   },
   {
     "id": "yt-q4jkMc7PH5k",
@@ -776,7 +807,8 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Pacing documentary narrative sections with appropriate background ambient sound cues.",
     "solutions": "Implemented audio-ducking tracks and conformed sound levels to standards.",
-    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches."
+    "fullDescription": "A mini-documentary vlog edit focusing on clean storytelling pacing and smooth exposure matches.",
+    "mediaType": "video"
   },
   {
     "id": "yt-IqK1a7_fuTw",
@@ -800,6 +832,7 @@
     "audioSpecs": "Stereo audio mix",
     "challenges": "Creating fluid kinetic text elements that keep pace with rapid sound design cues.",
     "solutions": "Linked keyframes with custom audio-amplitude expressions in After Effects.",
-    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention."
+    "fullDescription": "An engaging motion-based typography short utilizing custom keyframe speeds and transitions for high viewer retention.",
+    "mediaType": "video"
   }
 ]

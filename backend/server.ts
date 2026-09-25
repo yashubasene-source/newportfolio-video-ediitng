@@ -17,7 +17,7 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   // Support parsing JSON request bodies
   app.use(express.json());
@@ -52,7 +52,11 @@ async function startServer() {
   const storage = multer.diskStorage({
     destination: (req, file, cb) => {
       const uploadType = (req.query.uploadType as string) || "video";
-      const targetSubdir = uploadType === "reel" ? "reels" : "videos";
+      let targetSubdir = "videos";
+      if (uploadType === "reel") targetSubdir = "reels";
+      else if (uploadType === "poster") targetSubdir = "posters";
+      else if (uploadType === "preview") targetSubdir = "previews";
+
       const targetPath = path.join(uploadsDir, targetSubdir);
 
       if (!fs.existsSync(targetPath)) {
@@ -68,7 +72,7 @@ async function startServer() {
 
   const upload = multer({
     storage,
-    limits: { fileSize: 100 * 1024 * 1024 } // 100MB video limit
+    limits: { fileSize: 200 * 1024 * 1024 } // 200MB limit
   });
 
   // Serve static uploads
@@ -249,19 +253,39 @@ async function startServer() {
     }
   });
 
-  // POST local video upload (routes to videos or reels based on query param)
-  app.post("/api/upload-video", upload.single("video"), (req, res) => {
+  // Media upload handler (supports both /api/upload-video and /api/upload-media)
+  const handleMediaUpload = (req: express.Request, res: express.Response) => {
     try {
-      if (!req.file) {
+      const file = req.file;
+      if (!file) {
         return res.status(400).json({ error: "No file uploaded" });
       }
       const uploadType = (req.query.uploadType as string) || "video";
-      const subfolder = uploadType === "reel" ? "reels" : "videos";
-      const fileUrl = `/uploads/${subfolder}/${req.file.filename}`;
-      return res.json({ url: fileUrl });
+      let subfolder = "videos";
+      if (uploadType === "reel") subfolder = "reels";
+      else if (uploadType === "poster") subfolder = "posters";
+      else if (uploadType === "preview") subfolder = "previews";
+
+      const fileUrl = `/uploads/${subfolder}/${file.filename}`;
+      return res.json({
+        url: fileUrl,
+        filename: file.filename,
+        originalName: file.originalname,
+        size: file.size,
+        mimetype: file.mimetype,
+      });
     } catch (error: any) {
       return res.status(500).json({ error: error.message || "Upload failed" });
     }
+  };
+
+  app.post("/api/upload-video", upload.single("video"), handleMediaUpload);
+  app.post("/api/upload-media", upload.fields([{ name: "file", maxCount: 1 }, { name: "video", maxCount: 1 }, { name: "poster", maxCount: 1 }]), (req, res) => {
+    // Pick whichever field was provided
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const file = req.file || files?.file?.[0] || files?.video?.[0] || files?.poster?.[0];
+    (req as any).file = file;
+    return handleMediaUpload(req, res);
   });
 
   // GET YouTube details for auto-filling project metadata
