@@ -301,7 +301,7 @@ function MainContent() {
           <ResumeModal
             isOpen={resumeOpen}
             onClose={() => setResumeOpen(false)}
-            resumeUrl={siteConfig?.hero?.cvLink || 'https://drive.google.com'}
+            resumeUrl={siteConfig?.hero?.cvLink || '/assets/Anshay-Basene-Resume.pdf'}
             currentTheme={currentTheme}
           />
 
