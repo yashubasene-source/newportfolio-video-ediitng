@@ -23,6 +23,9 @@ import FAQ from './components/FAQ';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import ProjectViewer from './components/ProjectViewer';
+import MotionStories from './components/MotionStories';
+import ResumeModal from './components/ResumeModal';
+import CinematicScrollExperience from './components/CinematicScrollExperience';
 
 const AdminPanel = lazy(() => import('./components/AdminPanel'));
 const AuditReport = lazy(() => import('./components/AuditReport'));
@@ -31,8 +34,9 @@ const AuditReport = lazy(() => import('./components/AuditReport'));
 import { PerformanceProvider, usePerformance } from './motion/performanceManager';
 import { useLenisScroll } from './motion/scrollAnimations';
 
-// Themes configuration
+// Themes configuration (Default: Luminous Moss & Silver #141414 from uploaded branding)
 const THEMES: ThemeColors[] = [
+  { id: 'luminous-moss', name: 'Luminous Moss', accent: 'moss', accentHex: '#2BEE34', glowColor: 'rgba(43,238,52,0.35)' },
   { id: 'violet', name: 'Cyber Violet', accent: 'purple', accentHex: '#a855f7', glowColor: 'rgba(168,85,247,0.3)' },
   { id: 'emerald', name: 'Emerald Hack', accent: 'emerald', accentHex: '#10b981', glowColor: 'rgba(16,185,129,0.3)' },
   { id: 'crimson', name: 'Sunset Crimson', accent: 'red', accentHex: '#ef4444', glowColor: 'rgba(239,68,68,0.3)' },
@@ -50,6 +54,7 @@ function MainContent() {
   const [soundEnabled, setSoundEnabled] = useState(false);
   const [adminOpen, setAdminOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  const [resumeOpen, setResumeOpen] = useState(false);
   const [currentTheme, setCurrentTheme] = useState<ThemeColors>(THEMES[0]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [siteConfig, setSiteConfig] = useState<any>(null);
@@ -213,7 +218,7 @@ function MainContent() {
   const isLiteMode = capabilities.mode === 'lite' || capabilities.mode === 'reduced';
 
   return (
-    <div className="bg-[#FAF7F2] text-slate-900 min-h-screen selection:bg-purple-500/10 selection:text-slate-900 font-sans scroll-smooth antialiased relative overflow-x-hidden">
+    <div className="bg-[#141414] text-white min-h-screen selection:bg-[#2BEE34]/25 selection:text-white font-sans scroll-smooth antialiased relative overflow-x-hidden">
       
       {/* Cinematic count entry loader */}
       {!preloaderComplete ? (
@@ -224,13 +229,13 @@ function MainContent() {
       ) : (
         /* Full Portfolio Layout */
         <div className="flex flex-col relative min-h-screen">
-          {/* Frosted Glass Floating Ambient Glows (Only render glowing circles in Balanced/Full Modes) */}
+          {/* Ambient Lighting Glows in Luminous Moss and Dark Obsidian */}
           {!isLiteMode && (
             <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
-              <div className="absolute -top-[5%] -left-[10%] w-[50%] h-[45%] bg-indigo-300 rounded-full blur-[140px] opacity-15 animate-glow-1" />
-              <div className="absolute top-[30%] -right-[10%] w-[55%] h-[50%] bg-emerald-200 rounded-full blur-[150px] opacity-15 animate-glow-2" />
-              <div className="absolute top-[65%] -left-[15%] w-[50%] h-[45%] bg-amber-200 rounded-full blur-[140px] opacity-15 animate-glow-1" />
-              <div className="absolute -bottom-[5%] right-[10%] w-[45%] h-[40%] bg-purple-200 rounded-full blur-[130px] opacity-15 animate-glow-2" />
+              <div className="absolute -top-[5%] -left-[10%] w-[50%] h-[45%] bg-[#2BEE34] rounded-full blur-[180px] opacity-[0.06] animate-glow-1" />
+              <div className="absolute top-[30%] -right-[10%] w-[55%] h-[50%] bg-[#10b981] rounded-full blur-[180px] opacity-[0.05] animate-glow-2" />
+              <div className="absolute top-[65%] -left-[15%] w-[50%] h-[45%] bg-[#2BEE34] rounded-full blur-[180px] opacity-[0.05] animate-glow-1" />
+              <div className="absolute -bottom-[5%] right-[10%] w-[45%] h-[40%] bg-[#06b6d4] rounded-full blur-[160px] opacity-[0.05] animate-glow-2" />
             </div>
           )}
 
@@ -243,6 +248,7 @@ function MainContent() {
             themesList={THEMES}
             onOpenAdmin={() => setAdminOpen(true)}
             onOpenReport={() => setReportOpen(true)}
+            onOpenResume={() => setResumeOpen(true)}
           />
 
           {/* Main sections */}
@@ -253,8 +259,13 @@ function MainContent() {
               heroConfig={siteConfig?.hero}
               projectsList={projects}
               onSelectProject={setSelectedProject}
+              onOpenResume={() => setResumeOpen(true)}
             />
             <ClientStrip />
+            <MotionStories
+              currentTheme={currentTheme}
+              soundEnabled={soundEnabled}
+            />
             <Showcase
               currentTheme={currentTheme}
               soundEnabled={soundEnabled}
@@ -262,11 +273,6 @@ function MainContent() {
               onOpenAdmin={() => setAdminOpen(true)}
               onSelectProject={setSelectedProject}
               isViewerOpen={Boolean(selectedProject) || adminOpen}
-            />
-            <BeforeAfter
-              currentTheme={currentTheme}
-              soundEnabled={soundEnabled}
-              progressions={siteConfig?.progressions || []}
             />
             <Calculator currentTheme={currentTheme} soundEnabled={soundEnabled} />
             <About currentTheme={currentTheme} aboutConfig={siteConfig?.about} />
@@ -279,10 +285,25 @@ function MainContent() {
           <Footer currentTheme={currentTheme} soundEnabled={soundEnabled} />
 
           {/* Overlay Floating Film Timecode (mimics edit bays) */}
-          <div className="fixed bottom-6 left-6 z-30 px-3 py-1.5 rounded-lg border border-slate-200 bg-white/90 font-mono text-[9px] tracking-widest text-slate-500 shadow-md flex items-center gap-1.5 select-none hidden sm:flex">
+          <div className="fixed bottom-6 left-6 z-30 px-3 py-1.5 rounded-lg border border-white/10 bg-[#16181F]/90 backdrop-blur-md font-mono text-[9px] tracking-widest text-slate-400 shadow-xl flex items-center gap-1.5 select-none hidden sm:flex">
             <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
             TIMECODE: <span style={{ color: currentTheme.accentHex }} className="font-bold">{timecode}</span>
           </div>
+
+          {/* Interactive Cinematic Scroll Experience (Audio synthesis, lightning velocity bar, glow aura cursor) */}
+          <CinematicScrollExperience
+            soundEnabled={soundEnabled}
+            setSoundEnabled={setSoundEnabled}
+            currentTheme={currentTheme}
+          />
+
+          {/* Dedicated Resume Viewer Modal */}
+          <ResumeModal
+            isOpen={resumeOpen}
+            onClose={() => setResumeOpen(false)}
+            resumeUrl={siteConfig?.hero?.cvLink || 'https://drive.google.com'}
+            currentTheme={currentTheme}
+          />
 
           {/* Portfolio Manager System Admin Modal */}
           {adminOpen && (

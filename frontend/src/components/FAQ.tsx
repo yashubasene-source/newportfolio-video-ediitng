@@ -19,6 +19,8 @@ export default function FAQ({ currentTheme, soundEnabled }: FAQProps) {
   const { capabilities, settings } = usePerformance();
   const isLiteMode = capabilities.mode === 'lite' || capabilities.mode === 'reduced';
 
+  const accentColor = currentTheme.accentHex || '#2BEE34';
+
   const playSound = (freq: number, dur = 0.05) => {
     if (!soundEnabled) return;
     try {
@@ -38,28 +40,28 @@ export default function FAQ({ currentTheme, soundEnabled }: FAQProps) {
   const faqs = [
     {
       q: 'What is your typical turnaround time?',
-      a: 'For short form reels and typography under 1 minute, standard turnaround is 24–48 hours. For longer commercial projects or full documentaries, expect 5–7 working days depending on brief size.',
+      a: 'For short form vertical reels (Real Estate, UGC, Promo) under 60 seconds, standard turnaround is 24–48 hours. For full architectural tours or complex commercial campaigns, turnaround is 3–5 working days.',
     },
     {
-      q: 'How do I send you my raw footage and files?',
-      a: 'You can bundle assets and upload them directly to Google Drive, WeTransfer, or Dropbox, then share a viewing/editor link. We coordinate folders easily over WhatsApp or email.',
+      q: 'How do I send my raw footage?',
+      a: 'You can upload your raw assets to Google Drive, Dropbox, or WeTransfer and share a folder link. We coordinate briefs and review links seamlessly over WhatsApp or Email.',
+    },
+    {
+      q: 'Which 4 editing niches do you specialize in?',
+      a: 'I specialize strictly in Real Estate Walkthroughs, UGC & Direct-Response conversion ads, Promotional brand campaigns, and Educational talking-head tutorials. Every edit is engineered for high retention and engagement.',
     },
     {
       q: 'How do revisions work?',
-      a: 'All project packages include 2 review/revisions rounds by default where we tighten pacing, tweak grading levels, and sync audio clips. If you need complete design shifts later, additional edits are charged flatly.',
+      a: 'All project packages include 2 polished revision rounds where we fine-tune cuts, sound effects, grading curves, and typography. Additional round iterations can be requested easily.',
     },
     {
-      q: 'Do you offer monthly retainer plans?',
-      a: 'Yes, retainer plans are available and highly recommended for consistent creators, YouTubers, and digital agencies needing priority queue slots, set delivery speed, and lower per-video costs.',
-    },
-    {
-      q: 'Are you available to sign non-disclosure agreements (NDAs)?',
-      a: 'Absolutely. I work frequently on sensitive corporate campaigns, fashion line drops, and political documentaries where strict confidentiality and secure local storage of raw assets are mandatory.',
+      q: 'Do you offer monthly video retainer packages?',
+      a: 'Yes! Retainers are available and highly recommended for consistent creators, agencies, and real estate brands requiring a predictable turnaround queue, fixed slots, and discounted per-video rates.',
     },
   ];
 
   return (
-    <section id="faq-section" className="relative bg-transparent py-24 border-b border-slate-200/50 overflow-hidden text-left">
+    <section id="faq-section" className="relative bg-[#141414] py-24 border-b border-white/5 overflow-hidden text-left text-white">
       <div className="max-w-4xl mx-auto px-6 relative z-10">
         
         {/* Header */}
@@ -67,11 +69,11 @@ export default function FAQ({ currentTheme, soundEnabled }: FAQProps) {
           <p className="text-[10px] font-mono tracking-[4px] text-slate-400 uppercase">
             COMMON INQUIRIES
           </p>
-          <h2 className="font-sans font-black text-4xl md:text-5xl leading-tight text-slate-900">
-            Got <span style={{ color: currentTheme.accentHex }}>Questions?</span>
+          <h2 className="font-sans font-black text-4xl md:text-5xl leading-tight text-white">
+            Got <span style={{ color: accentColor }}>Questions?</span>
           </h2>
-          <p className="text-slate-600 text-sm">
-            Everything you need to understand about asset delivery, turnaround pacing, monthly retributions, and system revisions.
+          <p className="text-slate-400 text-sm">
+            Everything you need to know about asset delivery, turnaround times, monthly retainers, and revision workflows.
           </p>
         </div>
 
@@ -83,9 +85,9 @@ export default function FAQ({ currentTheme, soundEnabled }: FAQProps) {
               <div
                 key={index}
                 id={`faq-item-${index}`}
-                className="rounded-2xl border glass-card overflow-hidden transition-all shadow-sm"
+                className="rounded-2xl border bg-[#1A1D24] border-white/10 overflow-hidden transition-all shadow-md"
                 style={{
-                  borderColor: isExpanded ? `${currentTheme.accentHex}40` : 'rgba(0,0,0,0.1)',
+                  borderColor: isExpanded ? `${accentColor}50` : 'rgba(255,255,255,0.08)',
                 }}
               >
                 {/* Trigger Button */}
@@ -95,10 +97,10 @@ export default function FAQ({ currentTheme, soundEnabled }: FAQProps) {
                     setExpandedIndex(isExpanded ? null : index);
                     playSound(isExpanded ? 300 : 450);
                   }}
-                  className="w-full flex items-center justify-between p-5 md:p-6 text-left hover:bg-slate-50/50 transition-colors cursor-pointer"
+                  className="w-full flex items-center justify-between p-5 md:p-6 text-left hover:bg-white/[0.02] transition-colors cursor-pointer"
                 >
-                  <span className="font-sans font-bold text-sm md:text-base text-slate-900 flex items-center gap-3">
-                    <HelpCircle className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <span className="font-sans font-bold text-sm md:text-base text-white flex items-center gap-3">
+                    <HelpCircle className="w-4 h-4 flex-shrink-0" style={{ color: accentColor }} />
                     {faq.q}
                   </span>
                   {isExpanded ? (
@@ -117,7 +119,7 @@ export default function FAQ({ currentTheme, soundEnabled }: FAQProps) {
                       exit={isLiteMode ? { opacity: 0 } : { height: 0, opacity: 0 }}
                       transition={{ duration: settings.duration, ease: 'easeInOut' }}
                     >
-                      <div className="p-6 pt-0 border-t border-slate-100 text-slate-600 text-xs md:text-sm leading-relaxed">
+                      <div className="p-6 pt-0 border-t border-white/5 text-slate-300 text-xs md:text-sm leading-relaxed font-light">
                         {faq.a}
                       </div>
                     </motion.div>

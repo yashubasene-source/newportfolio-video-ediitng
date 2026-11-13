@@ -3,13 +3,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { Scissors, Film, Sparkles, Play, Pause } from 'lucide-react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
+import { Scissors, Film, Sparkles, Play, Pause, ExternalLink, ArrowRight, Video } from 'lucide-react';
 import { Project, ThemeColors } from '../types';
 import { usePerformance } from '../motion/performanceManager';
-import CurvedGalleryStage from './gallery/CurvedGalleryStage';
-import ActiveProjectInfo from './gallery/ActiveProjectInfo';
-import GalleryNavigation from './gallery/GalleryNavigation';
 
 interface ShowcaseProps {
   currentTheme: ThemeColors;
@@ -30,24 +27,16 @@ export default function Showcase({
 }: ShowcaseProps) {
   const sectionRef = useRef<HTMLElement | null>(null);
 
-  // Strict Media Classification: 'reels' (9:16 vertical only) vs 'videos' (landscape only)
+  // Mode: Reels (9:16 vertical) vs Videos (16:9 landscape)
   const [mediaMode, setMediaMode] = useState<'reels' | 'videos'>('reels');
   const [selectedNiche, setSelectedNiche] = useState<string>('all');
-  const [activeIndex, setActiveIndex] = useState<number>(0);
-  const [isModeTransitioning, setIsModeTransitioning] = useState<boolean>(false);
-
-  // User control and autoplay states
   const [isPaused, setIsPaused] = useState<boolean>(false);
-  const [isHovered, setIsHovered] = useState<boolean>(false);
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [motionDirection, setMotionDirection] = useState<'ltr' | 'rtl'>('rtl');
-  const [introEntered, setIntroEntered] = useState<boolean>(false);
-  const [isFocusing, setIsFocusing] = useState<boolean>(false);
-  const [scrollExitProgress, setScrollExitProgress] = useState<number>(0);
+  const [hoveredProjectId, setHoveredProjectId] = useState<string | null>(null);
 
   const { capabilities } = usePerformance();
   const isLiteMode = capabilities.mode === 'lite' || capabilities.mode === 'reduced';
-  const isTouch = capabilities.isTouch || capabilities.isMobile;
+
+  const accentColor = currentTheme.accentHex || '#2BEE34';
 
   const playSound = (freq: number, dur = 0.05) => {
     if (!soundEnabled) return;
@@ -65,416 +54,340 @@ export default function Showcase({
     } catch (e) {}
   };
 
-  // State 01: Viewport Entrance Observation for Controlled Intro
-  useEffect(() => {
-    if (!sectionRef.current) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setIntroEntered(true);
-        }
-      },
-      { threshold: 0.1 }
-    );
-    observer.observe(sectionRef.current);
-    return () => observer.disconnect();
-  }, []);
-
-  // State 11 & 12: Scroll-based storytelling and section exit
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
-    let ticking = false;
-    const handleScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          if (sectionRef.current) {
-            const rect = sectionRef.current.getBoundingClientRect();
-            const windowHeight = window.innerHeight;
-
-            const sectionBottom = rect.bottom;
-            const threshold = windowHeight * 0.5;
-
-            if (sectionBottom < threshold) {
-              const exit = Math.min(1, Math.max(0, (threshold - sectionBottom) / threshold));
-              setScrollExitProgress(exit);
-            } else {
-              setScrollExitProgress(0);
-            }
-          }
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  // STRICT SEPARATION & DEDUPLICATION: Reels and Videos datasets NEVER mix and never repeat!
+  // Filter datasets
   const reelsDataset = useMemo(() => {
-    const seenIds = new Set<string>();
-    const seenLinks = new Set<string>();
-    return projectsList
-      .filter((p) => p.mediaType === 'reel' || p.aspectRatio === '9:16' || p.link?.includes('/shorts/'))
-      .filter((p) => {
-        const link = (p.videoUrl || p.link || '').trim();
-        if (seenIds.has(p.id) || (link && seenLinks.has(link))) {
-          return false;
-        }
-        seenIds.add(p.id);
-        if (link) seenLinks.add(link);
-        return true;
-      })
-      .sort((a, b) => {
-        if (a.featured && !b.featured) return -1;
-        if (!a.featured && b.featured) return 1;
-        return (a.order || 0) - (b.order || 0);
-      });
+    return projectsList.filter((p) => p.mediaType === 'reel' || p.aspectRatio === '9:16' || p.link?.includes('/shorts/'));
   }, [projectsList]);
 
   const videosDataset = useMemo(() => {
-    const seenIds = new Set<string>();
-    const seenLinks = new Set<string>();
-    return projectsList
-      .filter((p) => p.mediaType === 'video' || (p.mediaType !== 'reel' && p.aspectRatio !== '9:16' && !p.link?.includes('/shorts/')))
-      .filter((p) => {
-        const link = (p.videoUrl || p.link || '').trim();
-        if (seenIds.has(p.id) || (link && seenLinks.has(link))) {
-          return false;
-        }
-        seenIds.add(p.id);
-        if (link) seenLinks.add(link);
-        return true;
-      })
-      .sort((a, b) => {
-        if (a.featured && !b.featured) return -1;
-        if (!a.featured && b.featured) return 1;
-        return (a.order || 0) - (b.order || 0);
-      });
+    return projectsList.filter((p) => p.mediaType === 'video' || (p.mediaType !== 'reel' && p.aspectRatio !== '9:16'));
   }, [projectsList]);
 
-  // Current active mode dataset
   const activeModeProjects = mediaMode === 'reels' ? reelsDataset : videosDataset;
 
-  // Available niches strictly inside the selected mode
-  const availableNiches = useMemo(() => {
-    const rawNiches = activeModeProjects.map((p) => p.niche).filter(Boolean);
-    const uniqueNiches: string[] = Array.from(new Set(rawNiches));
-    return uniqueNiches.map((niche) => ({
-      id: niche,
-      name: niche.replace('-', ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-      count: activeModeProjects.filter((p) => p.niche === niche).length,
-    }));
-  }, [activeModeProjects]);
-
-  // Filtered projects within the active mode
   const filteredProjects = useMemo(() => {
     if (selectedNiche === 'all') return activeModeProjects;
     return activeModeProjects.filter((p) => p.niche === selectedNiche);
   }, [activeModeProjects, selectedNiche]);
 
-  // Cinematic category switch animation (500–800ms)
-  const handleModeChange = (newMode: 'reels' | 'videos') => {
-    if (newMode === mediaMode || isModeTransitioning) return;
-    playSound(750, 0.08);
-    setIsModeTransitioning(true);
-
-    // Step 1: Smooth fade & scale down out
-    setTimeout(() => {
-      setMediaMode(newMode);
-      setSelectedNiche('all');
-      setActiveIndex(0);
-
-      // Step 2: Smooth enter from depth
-      setTimeout(() => {
-        setIsModeTransitioning(false);
-      }, 50);
-    }, 320);
+  // Ensure enough items to create seamless infinite marquee loop (minimum 8 cards per row)
+  const prepareRowData = (items: Project[], offset: number) => {
+    if (items.length === 0) return [];
+    let pool = [...items];
+    while (pool.length < 8) {
+      pool = pool.concat(items);
+    }
+    // Alternate or slice for variety between Row 1 and Row 2
+    const shifted = pool.slice(offset).concat(pool.slice(0, offset));
+    return shifted.concat(shifted); // duplicate for continuous loop
   };
 
-  const handlePrev = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('conveyor-nudge', { detail: { dir: -1 } }));
+  const row1Projects = useMemo(() => prepareRowData(filteredProjects, 0), [filteredProjects]);
+  const row2Projects = useMemo(() => prepareRowData(filteredProjects, Math.floor(filteredProjects.length / 2)), [filteredProjects]);
+
+  const getNicheLabel = (nicheStr: string) => {
+    switch (nicheStr) {
+      case 'real-estate': return 'Real Estate';
+      case 'ugc': return 'UGC Ad';
+      case 'promotional': return 'Promotional';
+      case 'educational': return 'Educational';
+      default: return nicheStr.replace('-', ' ');
     }
-    playSound(600, 0.04);
-  }, []);
-
-  const handleNext = useCallback(() => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('conveyor-nudge', { detail: { dir: 1 } }));
-    }
-    playSound(700, 0.04);
-  }, []);
-
-  // State 07: Project Focus Mode transition before opening viewer
-  const handleOpenProjectFocus = (project: Project) => {
-    setIsFocusing(true);
-    playSound(850, 0.15);
-
-    // Brief 280ms spatial elevation before overlay modal opens
-    setTimeout(() => {
-      onSelectProject(project);
-      setIsFocusing(false);
-    }, 280);
   };
-
-  const safeActiveIndex =
-    filteredProjects.length > 0 ? Math.min(activeIndex, filteredProjects.length - 1) : 0;
-  const activeProject = filteredProjects[safeActiveIndex] || null;
 
   return (
     <section
       ref={sectionRef}
       id="work-section"
-      className="relative bg-transparent py-20 sm:py-28 border-b border-slate-200/60 overflow-hidden select-none"
+      className="relative bg-[#141414] py-24 sm:py-32 border-b border-white/5 overflow-hidden select-none text-white"
     >
-      {/* Editorial Margins Coordinates */}
-      <div className="absolute top-8 left-8 pointer-events-none text-slate-300 font-mono text-xs select-none">
-        +
-      </div>
-      <div className="absolute top-8 right-8 pointer-events-none text-slate-300 font-mono text-xs select-none">
-        +
-      </div>
+      {/* Background radial atmosphere */}
+      <div
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full blur-[200px] opacity-10 pointer-events-none"
+        style={{ backgroundColor: accentColor }}
+      />
+      <div className="absolute inset-0 bg-[radial-gradient(#ffffff08_1px,transparent_1px)] [background-size:32px_32px] pointer-events-none opacity-30" />
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 relative z-10">
-        {/* 
-          STATE 01: INITIAL INTRO
-          Large oversized typography: SELECTED WORK
-        */}
-        <div
-          style={{
-            transform: introEntered
-              ? 'translate3d(0, 0, 0) scale(1)'
-              : 'translate3d(0, 24px, 0) scale(0.96)',
-            opacity: introEntered ? 1 : 0,
-            transition: 'transform 850ms cubic-bezier(0.22, 1, 0.36, 1), opacity 850ms ease',
-          }}
-          className="text-center flex flex-col items-center gap-3 sm:gap-4 max-w-4xl mx-auto mb-8 sm:mb-10"
-        >
-          {/* Phase Badge & Continuous Showcase Live Status Indicator */}
-          <div className="flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-200 bg-white/80 backdrop-blur-sm text-[10px] font-mono tracking-[0.2em] text-slate-600 uppercase shadow-xs">
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isPaused || isHovered || isDragging ? 'bg-amber-400' : 'animate-pulse'
-              }`}
-              style={{
-                backgroundColor:
-                  isPaused || isHovered || isDragging
-                    ? '#f59e0b'
-                    : currentTheme.accentHex || '#E63B2E',
+      {/* Section Header with Impactful Fjalla One + Script Typography */}
+      <div className="max-w-7xl mx-auto px-6 relative z-10 text-center mb-12 sm:mb-16">
+        
+        {/* Status Pill */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-white/10 bg-[#1A1D24]/80 backdrop-blur-md text-[10px] font-mono tracking-[0.2em] text-slate-300 uppercase shadow-md mb-4">
+          <span
+            className={`w-2 h-2 rounded-full ${isPaused ? 'bg-amber-400' : 'animate-ping'}`}
+            style={{ backgroundColor: isPaused ? '#f59e0b' : accentColor }}
+          />
+          <span>{isPaused ? 'MARQUEE PAUSED' : 'DUAL-ROW CINEMATIC MARQUEE • LIVE'}</span>
+        </div>
+
+        {/* Headline using Fjalla One and Instrument Serif */}
+        <h2 className="font-impact text-5xl sm:text-7xl md:text-8xl lg:text-9xl uppercase tracking-wider text-white leading-none">
+          SELECTED <br className="sm:hidden" />
+          <span className="font-editorial-script text-4xl sm:text-6xl md:text-7xl lg:text-8xl lowercase text-slate-400 font-normal px-2">
+            motion.
+          </span>
+          <span style={{ color: accentColor }}>WORKS</span>
+          <span className="font-impact text-slate-500 text-3xl sm:text-5xl ml-3 tracking-widest font-normal">
+            2026
+          </span>
+        </h2>
+
+        <p className="max-w-xl mx-auto text-slate-400 text-xs sm:text-sm md:text-base font-light leading-relaxed mt-4">
+          Dual-stream continuous showcase. Row 1 sweeps left-to-right, Row 2 glides right-to-left. Hover any reel to inspect, click for full screen playback.
+        </p>
+
+        {/* Media Mode & Controls */}
+        <div className="flex flex-wrap items-center justify-center gap-3 mt-8">
+          
+          {/* Format Toggle */}
+          <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-[#1A1D24] border border-white/10 shadow-lg">
+            <button
+              onClick={() => {
+                setMediaMode('reels');
+                setSelectedNiche('all');
+                playSound(600);
               }}
-            />
-            <span>
-              {isPaused
-                ? '3D CONVEYOR · PAUSED (SPACE)'
-                : isHovered
-                ? '3D CONVEYOR · HOVER PAUSED'
-                : isDragging
-                ? '3D CONVEYOR · SCRUBBING'
-                : '3D MEDIA CONVEYOR · RIGHT → LEFT LIVE'}
-            </span>
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                mediaMode === 'reels' ? 'text-black shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+              style={{ backgroundColor: mediaMode === 'reels' ? accentColor : 'transparent' }}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>9:16 Reels</span>
+              <span className="opacity-75 text-[10px]">({reelsDataset.length})</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setMediaMode('videos');
+                setSelectedNiche('all');
+                playSound(600);
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                mediaMode === 'videos' ? 'text-black shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+              style={{ backgroundColor: mediaMode === 'videos' ? accentColor : 'transparent' }}
+            >
+              <Film className="w-3.5 h-3.5" />
+              <span>16:9 Landscape</span>
+              <span className="opacity-75 text-[10px]">({videosDataset.length})</span>
+            </button>
           </div>
 
-          {/* Oversized Cinematic Typography (State 01) */}
-          <h2 className="font-sans font-black text-5xl sm:text-7xl md:text-8xl tracking-tight text-slate-900 leading-[0.95] uppercase">
-            SELECTED <br />
-            <span
-              className="text-transparent bg-clip-text"
-              style={{
-                backgroundImage: `linear-gradient(to right, ${currentTheme.accentHex || '#E63B2E'}, #0f172a)`,
-              }}
-            >
-              WORK
-            </span>
-          </h2>
+          {/* Pause / Play Speed Toggle */}
+          <button
+            onClick={() => {
+              setIsPaused(!isPaused);
+              playSound(700);
+            }}
+            className="px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#1A1D24] text-slate-300 hover:text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer shadow-md"
+            title={isPaused ? 'Resume Scrolling' : 'Pause Scrolling'}
+          >
+            {isPaused ? <Play className="w-3.5 h-3.5 text-emerald-400" /> : <Pause className="w-3.5 h-3.5 text-amber-400" />}
+            <span>{isPaused ? 'Resume' : 'Pause'}</span>
+          </button>
 
-          <p className="text-slate-600 text-xs sm:text-sm md:text-base leading-relaxed max-w-xl font-sans mt-1">
-            An interactive 3D spatial timeline of commercial edits, viral retention sequences, and documentary grade storytelling.
-          </p>
-
+          {/* Studio Manager Link */}
           {onOpenAdmin && (
             <button
               onClick={() => {
                 onOpenAdmin();
-                playSound(900, 0.15);
+                playSound(850);
               }}
-              className="mt-1 px-4 py-2 rounded-xl font-mono text-[11px] font-bold tracking-wider text-slate-700 bg-white border border-slate-200 hover:border-slate-400 hover:text-slate-900 transition-all shadow-sm flex items-center gap-2 cursor-pointer"
+              className="px-3.5 py-2.5 rounded-xl border border-white/10 bg-[#1A1D24] text-slate-300 hover:text-white text-xs font-mono flex items-center gap-1.5 cursor-pointer shadow-md"
             >
-              <Scissors className="w-3.5 h-3.5" style={{ color: currentTheme.accentHex }} />
-              PORTFOLIO ARCHIVE MANAGER
+              <Scissors className="w-3.5 h-3.5" style={{ color: accentColor }} />
+              <span>Studio Manager</span>
             </button>
           )}
         </div>
 
-        {/* 
-          PRIMARY MEDIA MODE SWITCHER: [ REELS (21) ]  [ VIDEOS (12) ]
-          Strict Separation: These two modes NEVER mix!
-        */}
-        <div
-          style={{
-            opacity: introEntered ? 1 : 0,
-            transform: introEntered ? 'translate3d(0, 0, 0)' : 'translate3d(0, 15px, 0)',
-            transition: 'transform 850ms cubic-bezier(0.22, 1, 0.36, 1) 150ms, opacity 850ms ease 150ms',
-          }}
-          className="flex flex-col items-center gap-3 mb-10 sm:mb-12"
-        >
-          {/* Main Mode Toggle */}
-          <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-white/80 border border-slate-200/90 shadow-sm backdrop-blur-md">
-            <button
-              onClick={() => handleModeChange('reels')}
-              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-mono font-bold tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer ${
-                mediaMode === 'reels'
-                  ? 'text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-              }`}
-              style={{
-                backgroundColor: mediaMode === 'reels' ? currentTheme.accentHex || '#E63B2E' : 'transparent',
-                boxShadow: mediaMode === 'reels' ? `0 6px 18px -2px ${currentTheme.glowColor}` : 'none',
-              }}
-            >
-              <Sparkles className="w-4 h-4" />
-              <span>REELS</span>
-              <span className="opacity-75 text-[11px] font-medium ml-0.5">({reelsDataset.length})</span>
-            </button>
-
-            <button
-              onClick={() => handleModeChange('videos')}
-              className={`px-5 py-2.5 rounded-xl text-xs sm:text-sm font-mono font-bold tracking-wider transition-all duration-300 flex items-center gap-2 cursor-pointer ${
-                mediaMode === 'videos'
-                  ? 'text-white shadow-md'
-                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
-              }`}
-              style={{
-                backgroundColor: mediaMode === 'videos' ? currentTheme.accentHex || '#E63B2E' : 'transparent',
-                boxShadow: mediaMode === 'videos' ? `0 6px 18px -2px ${currentTheme.glowColor}` : 'none',
-              }}
-            >
-              <Film className="w-4 h-4" />
-              <span>VIDEOS</span>
-              <span className="opacity-75 text-[11px] font-medium ml-0.5">({videosDataset.length})</span>
-            </button>
-          </div>
-
-          {/* Secondary Sub-Category Filter (Strictly filtered within active mode) */}
-          {availableNiches.length > 1 && (
-            <div className="flex flex-wrap items-center justify-center gap-1.5 mt-1">
+        {/* Niche Filter Pills */}
+        <div className="flex flex-wrap items-center justify-center gap-1.5 mt-5">
+          {[
+            { id: 'all', label: 'All Disciplines' },
+            { id: 'real-estate', label: 'Real Estate' },
+            { id: 'ugc', label: 'UGC' },
+            { id: 'promotional', label: 'Promotional' },
+            { id: 'educational', label: 'Educational' },
+          ].map((cat) => {
+            const isActive = selectedNiche === cat.id;
+            return (
               <button
+                key={cat.id}
                 onClick={() => {
-                  setSelectedNiche('all');
-                  setActiveIndex(0);
-                  playSound(600, 0.03);
+                  setSelectedNiche(cat.id);
+                  playSound(500);
                 }}
-                className={`px-3 py-1 rounded-lg text-[10px] font-mono font-semibold transition-all border cursor-pointer ${
-                  selectedNiche === 'all'
-                    ? 'bg-slate-900 text-white border-slate-900'
-                    : 'bg-white/60 text-slate-500 border-slate-200 hover:text-slate-900 hover:border-slate-300'
+                className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition-all cursor-pointer border ${
+                  isActive
+                    ? 'bg-white text-black font-bold border-white shadow-md'
+                    : 'bg-white/5 text-slate-400 border-white/10 hover:text-white hover:border-white/20'
                 }`}
               >
-                All {mediaMode === 'reels' ? 'Reels' : 'Videos'} ({activeModeProjects.length})
+                {cat.label}
               </button>
-              {availableNiches.map((niche) => {
-                const isActive = selectedNiche === niche.id;
-                return (
-                  <button
-                    key={niche.id}
-                    onClick={() => {
-                      setSelectedNiche(niche.id);
-                      setActiveIndex(0);
-                      playSound(600, 0.03);
-                    }}
-                    className={`px-3 py-1 rounded-lg text-[10px] font-mono font-semibold transition-all border cursor-pointer ${
-                      isActive
-                        ? 'bg-slate-900 text-white border-slate-900'
-                        : 'bg-white/60 text-slate-500 border-slate-200 hover:text-slate-900 hover:border-slate-300'
-                    }`}
-                  >
-                    {niche.name} ({niche.count})
-                  </button>
-                );
-              })}
-            </div>
-          )}
+            );
+          })}
         </div>
 
-        {/* 
-          STATE 02, 03, 04, 05: CINEMATIC 3D CURVED PROJECT GALLERY STAGE
-        */}
-        {filteredProjects.length > 0 ? (
-          <div
-            style={{
-              opacity: isModeTransitioning ? 0 : introEntered ? 1 : 0,
-              transform: isModeTransitioning
-                ? 'translate3d(0, 16px, -60px) scale(0.93)'
-                : introEntered
-                ? 'translate3d(0, 0, 0) scale(1)'
-                : 'translate3d(0, 30px, 0)',
-              transition: isModeTransitioning
-                ? 'opacity 300ms ease, transform 300ms cubic-bezier(0.22, 1, 0.36, 1)'
-                : 'opacity 500ms ease, transform 500ms cubic-bezier(0.22, 1, 0.36, 1)',
-            }}
-            className="w-full flex flex-col items-center overflow-visible"
-          >
-            <CurvedGalleryStage
-              projects={filteredProjects}
-              activeIndex={safeActiveIndex}
-              setActiveIndex={setActiveIndex}
-              mediaMode={mediaMode}
-              currentTheme={currentTheme}
-              isLiteMode={isLiteMode}
-              isTouch={isTouch}
-              isFocusingProject={isFocusing}
-              scrollExitProgress={scrollExitProgress}
-              onSelectProject={handleOpenProjectFocus}
-              onHoverChange={setIsHovered}
-              onDragChange={setIsDragging}
-              isPaused={isPaused}
-              onTogglePause={() => setIsPaused((prev) => !prev)}
-            />
-
-            {/* STATE 06: Active Project Information Reveal */}
-            <ActiveProjectInfo
-              project={activeProject}
-              currentIndex={safeActiveIndex}
-              totalProjects={filteredProjects.length}
-              currentTheme={currentTheme}
-              onOpenViewer={handleOpenProjectFocus}
-              isLiteMode={isLiteMode}
-            />
-
-            {/* STATE 09 & 10: Gallery Navigation & Continuous Infinite Cycle Controls */}
-            <GalleryNavigation
-              onPrev={handlePrev}
-              onNext={handleNext}
-              currentIndex={safeActiveIndex}
-              totalProjects={filteredProjects.length}
-              currentTheme={currentTheme}
-              onSelectIndex={(idx) => {
-                setActiveIndex(idx);
-                playSound(650, 0.04);
-              }}
-              isPaused={isPaused}
-              onTogglePause={() => {
-                setIsPaused((prev) => !prev);
-                playSound(isPaused ? 800 : 500, 0.04);
-              }}
-              motionDirection={motionDirection}
-              onToggleDirection={() => {
-                setMotionDirection((d) => (d === 'ltr' ? 'rtl' : 'ltr'));
-                playSound(700, 0.05);
-              }}
-            />
-          </div>
-        ) : (
-          <div className="py-20 text-center border border-dashed border-slate-200 rounded-3xl bg-white/40 flex flex-col items-center justify-center">
-            <Film className="w-8 h-8 text-slate-400 mb-2" />
-            <p className="font-mono text-xs text-slate-500 uppercase tracking-widest">
-              No projects found in this category
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* DUAL-ROW CONVEYOR TRACKS */}
+      <div className="relative w-full space-y-6 overflow-hidden py-4">
+        
+        {/* Soft edge blur masks */}
+        <div className="absolute left-0 top-0 bottom-0 w-20 sm:w-36 bg-gradient-to-r from-[#141414] via-[#141414]/90 to-transparent z-20 pointer-events-none" />
+        <div className="absolute right-0 top-0 bottom-0 w-20 sm:w-36 bg-gradient-to-l from-[#141414] via-[#141414]/90 to-transparent z-20 pointer-events-none" />
+
+        {/* ROW 1: Gliding Left to Right */}
+        <div className="w-full overflow-hidden flex">
+          <div
+            className="animate-marquee-right flex gap-5 shrink-0"
+            style={{ animationPlayState: isPaused ? 'paused' : undefined }}
+          >
+            {row1Projects.map((p, idx) => (
+              <ReelCard
+                key={`r1-${p.id}-${idx}`}
+                project={p}
+                accentColor={accentColor}
+                onSelect={() => {
+                  playSound(800);
+                  onSelectProject(p);
+                }}
+                nicheLabel={getNicheLabel(p.niche)}
+                mediaMode={mediaMode}
+                isHovered={hoveredProjectId === `r1-${p.id}-${idx}`}
+                onHoverChange={(h) => setHoveredProjectId(h ? `r1-${p.id}-${idx}` : null)}
+              />
+            ))}
+          </div>
+        </div>
+
+        {/* ROW 2: Gliding Right to Left */}
+        <div className="w-full overflow-hidden flex">
+          <div
+            className="animate-marquee-left flex gap-5 shrink-0"
+            style={{ animationPlayState: isPaused ? 'paused' : undefined }}
+          >
+            {row2Projects.map((p, idx) => (
+              <ReelCard
+                key={`r2-${p.id}-${idx}`}
+                project={p}
+                accentColor={accentColor}
+                onSelect={() => {
+                  playSound(800);
+                  onSelectProject(p);
+                }}
+                nicheLabel={getNicheLabel(p.niche)}
+                mediaMode={mediaMode}
+                isHovered={hoveredProjectId === `r2-${p.id}-${idx}`}
+                onHoverChange={(h) => setHoveredProjectId(h ? `r2-${p.id}-${idx}` : null)}
+              />
+            ))}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Bottom CTA hint */}
+      <div className="text-center mt-8">
+        <p className="text-xs font-mono text-slate-500 tracking-widest uppercase">
+          CLICK ANY REEL TO EXPAND COMPLETE PROJECT BREAKDOWN
+        </p>
+      </div>
+
     </section>
+  );
+}
+
+// Subcomponent: Individual Reel Card
+interface ReelCardProps {
+  key?: string;
+  project: Project;
+  accentColor: string;
+  onSelect: () => void;
+  nicheLabel: string;
+  mediaMode: 'reels' | 'videos';
+  isHovered: boolean;
+  onHoverChange: (hovered: boolean) => void;
+}
+
+function ReelCard({
+  project,
+  accentColor,
+  onSelect,
+  nicheLabel,
+  mediaMode,
+  isHovered,
+  onHoverChange,
+}: ReelCardProps) {
+  const isVertical = mediaMode === 'reels';
+
+  return (
+    <div
+      onClick={onSelect}
+      onMouseEnter={() => onHoverChange(true)}
+      onMouseLeave={() => onHoverChange(false)}
+      className={`group relative rounded-2xl overflow-hidden cursor-pointer transition-all duration-300 border bg-[#1A1D24] shadow-xl hover:shadow-2xl hover:-translate-y-2 shrink-0 ${
+        isVertical
+          ? 'w-[210px] sm:w-[250px] md:w-[270px] aspect-[9/16]'
+          : 'w-[280px] sm:w-[340px] md:w-[380px] aspect-video'
+      }`}
+      style={{
+        borderColor: isHovered ? accentColor : 'rgba(255, 255, 255, 0.1)',
+        boxShadow: isHovered ? `0 12px 30px -4px ${accentColor}30` : undefined,
+      }}
+    >
+      {/* Thumbnail Image */}
+      <img
+        src={project.thumbnail || 'https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800'}
+        alt={project.title}
+        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 opacity-90"
+      />
+
+      {/* Vignette Gradients */}
+      <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/30 to-black/60 opacity-80 group-hover:opacity-60 transition-opacity" />
+
+      {/* Top Bar: Niche & Duration Badges */}
+      <div className="absolute top-3 left-3 right-3 flex items-center justify-between z-10">
+        <span
+          className="text-[10px] font-mono font-bold px-2.5 py-1 rounded-full uppercase tracking-wider text-black shadow-md"
+          style={{ backgroundColor: accentColor }}
+        >
+          {nicheLabel}
+        </span>
+        <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-black/60 backdrop-blur-md text-white border border-white/10">
+          {project.duration || '0:45'}
+        </span>
+      </div>
+
+      {/* Center Play Button on Hover */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <div
+          className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-300 shadow-2xl ${
+            isHovered ? 'scale-110 opacity-100' : 'scale-90 opacity-0'
+          }`}
+          style={{ backgroundColor: accentColor }}
+        >
+          <Play className="w-5 h-5 text-black fill-black ml-0.5" />
+        </div>
+      </div>
+
+      {/* Bottom Info Glass Strip */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/95 via-black/80 to-transparent z-10 space-y-1">
+        {project.client && (
+          <span className="text-[10px] font-mono text-slate-400 uppercase tracking-widest block">
+            {project.client}
+          </span>
+        )}
+        <h3 className="font-sans font-bold text-sm sm:text-base text-white line-clamp-1 group-hover:text-emerald-300 transition-colors">
+          {project.title}
+        </h3>
+        <p className="text-[11px] text-slate-300 line-clamp-1 font-light opacity-90">
+          {project.description}
+        </p>
+      </div>
+    </div>
   );
 }

@@ -4,17 +4,33 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
-import { X, Lock, Sparkles, AlertCircle } from 'lucide-react';
+import { motion, AnimatePresence } from 'motion/react';
+import {
+  X,
+  Lock,
+  Sparkles,
+  Film,
+  Building2,
+  Megaphone,
+  GraduationCap,
+  Save,
+  Check,
+  Plus,
+  Trash2,
+  Edit2,
+  ExternalLink,
+  FileText,
+  Instagram,
+  Database,
+  Key,
+  ShieldCheck,
+  Layers,
+  Sliders,
+  AlertCircle,
+  HelpCircle,
+  Eye,
+} from 'lucide-react';
 import { Project, ProjectType, NicheType, ThemeColors } from '../types';
-
-// Modular video/reel management subcomponents
-import LocalUploader from './video-management/LocalUploader';
-import AiAutofill from './video-management/AiAutofill';
-import ProjectForm from './video-management/ProjectForm';
-import ProjectList from './video-management/ProjectList';
-import ProjectViewer from './ProjectViewer';
-import { isCloudinary, getCloudinaryPosterUrl } from '../utils/videoUtils';
 
 interface AdminPanelProps {
   isOpen: boolean;
@@ -43,149 +59,53 @@ export default function AdminPanel({
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authError, setAuthError] = useState('');
 
-  // Active Tab
-  const [activeTab, setActiveTab] = useState<'projects' | 'ai-upload' | 'local-upload' | 'site-content' | 'settings'>('projects');
+  // Sidebar Tab Navigation
+  const [activeTab, setActiveTab] = useState<'projects' | 'pipeline' | 'profile' | 'socials' | 'settings'>('projects');
+  const [saveToast, setSaveToast] = useState('');
 
-  // Form states for projects
+  // Project Form States
+  const [isEditingProject, setIsEditingProject] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [title, setTitle] = useState('');
-  const [slug, setSlug] = useState('');
-  const [type, setType] = useState<ProjectType>('video');
-  const [niche, setNiche] = useState<NicheType>('normal-edit');
-  const [link, setLink] = useState('');
-  const [thumbnail, setThumbnail] = useState('');
-  const [previewVideo, setPreviewVideo] = useState('');
-  const [fullVideo, setFullVideo] = useState('');
-  const [shortDescription, setShortDescription] = useState('');
-  const [description, setDescription] = useState('');
-  const [duration, setDuration] = useState('');
-  const [role, setRole] = useState('');
-  const [software, setSoftware] = useState('');
-  const [createdAtYear, setCreatedAtYear] = useState('2026');
-  const [featured, setFeatured] = useState(false);
-  const [order, setOrder] = useState(0);
-  const [tags, setTags] = useState('');
-  const [status, setStatus] = useState<'draft' | 'published'>('published');
-  const [aspectRatio, setAspectRatio] = useState<'9:16' | '16:9' | '1:1' | '4:5'>('16:9');
-  const [mediaType, setMediaType] = useState<'reel' | 'video'>('reel');
-  const [client, setClient] = useState('');
-  const [resolution, setResolution] = useState('');
-  const [frameRate, setFrameRate] = useState('');
-  const [colorGrade, setColorGrade] = useState('');
-  const [audioSpecs, setAudioSpecs] = useState('');
-  const [challenges, setChallenges] = useState('');
-  const [solutions, setSolutions] = useState('');
-  const [fullDescription, setFullDescription] = useState('');
-  const [previewModalProject, setPreviewModalProject] = useState<Project | null>(null);
+  const [projectTitle, setProjectTitle] = useState('');
+  const [projectNiche, setProjectNiche] = useState<NicheType>('real-estate');
+  const [projectMediaType, setProjectMediaType] = useState<'reel' | 'video'>('reel');
+  const [projectLink, setProjectLink] = useState('');
+  const [projectThumbnail, setProjectThumbnail] = useState('');
+  const [projectDescription, setProjectDescription] = useState('');
+  const [projectDuration, setProjectDuration] = useState('0:45');
+  const [projectClient, setProjectClient] = useState('');
+  const [projectFeatured, setProjectFeatured] = useState(false);
+  const [filterNiche, setFilterNiche] = useState<string>('all');
 
-  // Site Settings Form states
-  const [heroStatusText, setHeroStatusText] = useState('');
-  const [heroTitleNormal, setHeroTitleNormal] = useState('');
-  const [heroTitleGradient, setHeroTitleGradient] = useState('');
-  const [heroTitleSuffix, setHeroTitleSuffix] = useState('');
-  const [heroDescription, setHeroDescription] = useState('');
-  const [heroSlotsText, setHeroSlotsText] = useState('');
-  const [heroCvLink, setHeroCvLink] = useState('');
-  const [heroMetric1Val, setHeroMetric1Val] = useState('');
-  const [heroMetric1Lbl, setHeroMetric1Lbl] = useState('');
-  const [heroMetric2Val, setHeroMetric2Val] = useState('');
-  const [heroMetric2Lbl, setHeroMetric2Lbl] = useState('');
-  const [heroMetric3Val, setHeroMetric3Val] = useState('');
-  const [heroMetric3Lbl, setHeroMetric3Lbl] = useState('');
-
-  const [aboutTitle, setAboutTitle] = useState('');
-  const [aboutBioParagraph1, setAboutBioParagraph1] = useState('');
-  const [aboutBioParagraph2, setAboutBioParagraph2] = useState('');
-  const [aboutExperience, setAboutExperience] = useState('');
-  const [aboutEducation, setAboutEducation] = useState('');
-  const [aboutAvailability, setAboutAvailability] = useState('');
-  const [aboutLocation, setAboutLocation] = useState('');
-  const [aboutProfileImage, setAboutProfileImage] = useState('');
-  const [aboutLocationStamp, setAboutLocationStamp] = useState('');
-  const [aboutTags, setAboutTags] = useState('');
-
-  const [contactHeadline, setContactHeadline] = useState('');
-  const [contactSubheadline, setContactSubheadline] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactInstagramUrl, setContactInstagramUrl] = useState('');
-  const [contactWhatsappUrl, setContactWhatsappUrl] = useState('');
-  const [contactLocation, setContactLocation] = useState('');
+  // Pipeline States (The 4 Niches)
   const [progressions, setProgressions] = useState<any[]>([]);
+  const [activePipelineNiche, setActivePipelineNiche] = useState<string>('real-estate');
 
-  // API settings state
-  const [geminiApiKey, setGeminiApiKey] = useState(localStorage.getItem('anshay-gemini-api-key') || '');
-  const [mongoUri, setMongoUri] = useState(localStorage.getItem('anshay-mongo-uri') || '');
-  const [dbStatus, setDbStatus] = useState<string>('checking');
-  const [savingApiKey, setSavingApiKey] = useState(false);
+  // Profile & Resume States
+  const [cvLink, setCvLink] = useState('');
+  const [heroStatusText, setHeroStatusText] = useState('');
+  const [heroDescription, setHeroDescription] = useState('');
+  const [aboutBio1, setAboutBio1] = useState('');
+  const [aboutBio2, setAboutBio2] = useState('');
+  const [profileImage, setProfileImage] = useState('');
 
-  // Check database status when admin panel opens
-  useEffect(() => {
-    if (isOpen) {
-      fetch('/api/health')
-        .then((res) => res.json())
-        .then((data) => {
-          setDbStatus(data.database || 'local_file');
-        })
-        .catch(() => setDbStatus('local_file'));
-    }
-  }, [isOpen]);
+  // Socials States
+  const [instagramUrl, setInstagramUrl] = useState('');
+  const [whatsappUrl, setWhatsappUrl] = useState('');
+  const [emailVal, setEmailVal] = useState('');
+  const [phoneVal, setPhoneVal] = useState('');
+  const [locationVal, setLocationVal] = useState('');
 
-  // Sync siteConfig data to form states when it loads
-  useEffect(() => {
-    if (siteConfig) {
-      setHeroStatusText(siteConfig.hero?.statusText || '');
-      setHeroTitleNormal(siteConfig.hero?.titleNormal || '');
-      setHeroTitleGradient(siteConfig.hero?.titleGradient || '');
-      setHeroTitleSuffix(siteConfig.hero?.titleSuffix || '');
-      setHeroDescription(siteConfig.hero?.description || '');
-      setHeroSlotsText(siteConfig.hero?.slotsText || '');
-      setHeroCvLink(siteConfig.hero?.cvLink || '');
-      setHeroMetric1Val(siteConfig.hero?.metric1Val || '');
-      setHeroMetric1Lbl(siteConfig.hero?.metric1Lbl || '');
-      setHeroMetric2Val(siteConfig.hero?.metric2Val || '');
-      setHeroMetric2Lbl(siteConfig.hero?.metric2Lbl || '');
-      setHeroMetric3Val(siteConfig.hero?.metric3Val || '');
-      setHeroMetric3Lbl(siteConfig.hero?.metric3Lbl || '');
+  // Settings & DB States
+  const [mongoUri, setMongoUri] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+  const [dbStatus, setDbStatus] = useState<string>('local_file');
+  const [isSavingDb, setIsSavingDb] = useState(false);
 
-      setAboutTitle(siteConfig.about?.title || '');
-      setAboutBioParagraph1(siteConfig.about?.bioParagraph1 || '');
-      setAboutBioParagraph2(siteConfig.about?.bioParagraph2 || '');
-      setAboutExperience(siteConfig.about?.experience || '');
-      setAboutEducation(siteConfig.about?.education || '');
-      setAboutAvailability(siteConfig.about?.availability || '');
-      setAboutLocation(siteConfig.about?.location || '');
-      setAboutProfileImage(siteConfig.about?.profileImage || '');
-      setAboutLocationStamp(siteConfig.about?.locationStamp || '');
-      setAboutTags(siteConfig.about?.tags ? siteConfig.about.tags.join(', ') : '');
+  const accentColor = currentTheme.accentHex || '#2BEE34';
 
-      setContactHeadline(siteConfig.contact?.headline || '');
-      setContactSubheadline(siteConfig.contact?.subheadline || '');
-      setContactEmail(siteConfig.contact?.email || '');
-      setContactPhone(siteConfig.contact?.phone || '');
-      setContactInstagramUrl(siteConfig.contact?.instagramUrl || '');
-      setContactWhatsappUrl(siteConfig.contact?.whatsappUrl || '');
-      setContactLocation(siteConfig.contact?.location || '');
-      setProgressions(siteConfig.progressions || []);
-    }
-  }, [siteConfig]);
-
-  // Dispatch custom events to pause/resume Lenis scrolling and lock document body scroll
-  useEffect(() => {
-    if (isOpen) {
-      window.dispatchEvent(new CustomEvent('modal-open'));
-      document.body.style.overflow = 'hidden';
-    } else {
-      window.dispatchEvent(new CustomEvent('modal-close'));
-      document.body.style.overflow = '';
-    }
-    return () => {
-      window.dispatchEvent(new CustomEvent('modal-close'));
-      document.body.style.overflow = '';
-    };
-  }, [isOpen]);
-
-  const playSound = (freq: number, dur = 0.05) => {
+  // Sound feedback helper
+  const playSound = (freq: number) => {
     if (!soundEnabled) return;
     try {
       const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -194,1062 +114,975 @@ export default function AdminPanel({
       osc.connect(gain);
       gain.connect(ctx.destination);
       osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(0.012, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+      gain.gain.setValueAtTime(0.015, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
       osc.start();
-      osc.stop(ctx.currentTime + dur);
+      osc.stop(ctx.currentTime + 0.05);
     } catch (e) {}
   };
 
-  const handleAuth = (e: React.FormEvent) => {
+  const showToast = (msg: string) => {
+    setSaveToast(msg);
+    setTimeout(() => setSaveToast(''), 3000);
+  };
+
+  // Populate form fields from siteConfig on load
+  useEffect(() => {
+    if (siteConfig) {
+      setCvLink(siteConfig.hero?.cvLink || 'https://drive.google.com');
+      setHeroStatusText(siteConfig.hero?.statusText || '');
+      setHeroDescription(siteConfig.hero?.description || '');
+      setAboutBio1(siteConfig.about?.bioParagraph1 || '');
+      setAboutBio2(siteConfig.about?.bioParagraph2 || '');
+      setProfileImage(siteConfig.about?.profileImage || '');
+
+      setInstagramUrl(siteConfig.contact?.instagramUrl || 'https://www.instagram.com/anshay.edit?exln=MWkwdHR1bXllMGJjcg==');
+      setWhatsappUrl(siteConfig.contact?.whatsappUrl || 'https://wa.me/918319610243');
+      setEmailVal(siteConfig.contact?.email || 'yashubasene@gmail.com');
+      setPhoneVal(siteConfig.contact?.phone || '+91 8319610243');
+      setLocationVal(siteConfig.contact?.location || 'Bhopal, India');
+
+      setProgressions(siteConfig.progressions || []);
+    }
+
+    // Check DB status
+    fetch('/api/health')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.database) setDbStatus(data.database);
+      })
+      .catch(() => {});
+  }, [siteConfig]);
+
+  // Handle Login
+  const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     if (password === 'anshayadmin' || password === 'admin') {
       setIsAuthenticated(true);
       setAuthError('');
-      playSound(880, 0.15);
+      playSound(700);
     } else {
-      setAuthError('Incorrect Admin Passcode. Please try again.');
-      playSound(220, 0.2);
+      setAuthError('Incorrect studio password. Try again.');
+      playSound(200);
     }
   };
 
+  // Save Project (Add / Edit)
   const handleSaveProject = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!title || !link || !description) {
-      alert('Please fill out all required fields.');
+    if (!projectTitle || !projectLink) {
+      alert('Please fill out project title and video URL.');
       return;
     }
 
-    const softwareArray = software
-      ? software.split(',').map((s) => s.trim()).filter(Boolean)
-      : ['Adobe Suite'];
-
-    const tagsArray = tags
-      ? tags.split(',').map((t) => t.trim()).filter(Boolean)
-      : undefined;
-
-    let finalThumbnail = thumbnail.trim();
-    if (!finalThumbnail) {
-      if (isCloudinary(link)) {
-        finalThumbnail = getCloudinaryPosterUrl(link, 1);
-      } else {
-        const youtubeRegExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-        const match = link.match(youtubeRegExp);
-        if (match && match[2].length === 11) {
-          const videoId = match[2];
-          finalThumbnail = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-        } else if (/instagram\.com\/(p|reel|reels|tv)\//i.test(link)) {
-          finalThumbnail = 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?q=80&w=1200';
-        }
-      }
-    }
-
-    if (!finalThumbnail) {
-      finalThumbnail =
-        type === 'graphic'
-          ? 'https://images.unsplash.com/photo-1626785774573-4b799315345d?q=80&w=400'
-          : type === 'motion'
-          ? 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b?q=80&w=400'
-          : 'https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?q=80&w=400';
-    }
-
+    let updatedList: Project[];
     if (editingId) {
-      // Edit existing
-      const updated = projects.map((p) =>
-        p.id === editingId
-          ? {
-              ...p,
-              title,
-              slug: slug || undefined,
-              type,
-              niche,
-              link,
-              thumbnail: finalThumbnail,
-              poster: finalThumbnail,
-              previewVideo: previewVideo || undefined,
-              fullVideo: fullVideo || undefined,
-              shortDescription: shortDescription || undefined,
-              description,
-              duration: duration || '0:45',
-              role: role || 'Lead Editor',
-              software: softwareArray,
-              createdAt: createdAtYear || '2026',
-              aspectRatio,
-              mediaType: mediaType || (aspectRatio === '9:16' ? 'reel' : 'video'),
-              featured,
-              order,
-              tags: tagsArray,
-              status,
-              client: client || undefined,
-              resolution: resolution || undefined,
-              frameRate: frameRate || undefined,
-              colorGrade: colorGrade || undefined,
-              audioSpecs: audioSpecs || undefined,
-              challenges: challenges || undefined,
-              solutions: solutions || undefined,
-              fullDescription: fullDescription || undefined,
-            }
-          : p
-      );
-      setProjects(updated);
-      setEditingId(null);
-      playSound(700);
-      alert('Project updated successfully!');
+      updatedList = projects.map((p) => {
+        if (p.id === editingId) {
+          return {
+            ...p,
+            title: projectTitle,
+            niche: projectNiche,
+            mediaType: projectMediaType,
+            aspectRatio: projectMediaType === 'reel' ? '9:16' : '16:9',
+            link: projectLink,
+            videoUrl: projectLink,
+            thumbnail: projectThumbnail || p.thumbnail,
+            description: projectDescription,
+            duration: projectDuration,
+            client: projectClient,
+            featured: projectFeatured,
+          };
+        }
+        return p;
+      });
+      showToast('Project updated successfully!');
     } else {
-      // Add new
       const newProj: Project = {
-        id: `custom-${Date.now()}`,
-        title,
-        slug: slug || undefined,
-        type,
-        niche,
-        link,
-        thumbnail: finalThumbnail,
-        poster: finalThumbnail,
-        previewVideo: previewVideo || undefined,
-        fullVideo: fullVideo || undefined,
-        shortDescription: shortDescription || undefined,
-        description,
-        duration: duration || '0:45',
-        role: role || 'Lead Editor',
-        software: softwareArray,
-        createdAt: createdAtYear || '2026',
-        aspectRatio,
-        mediaType: mediaType || (aspectRatio === '9:16' ? 'reel' : 'video'),
-        featured,
-        order,
-        tags: tagsArray,
-        status,
-        client: client || undefined,
-        resolution: resolution || undefined,
-        frameRate: frameRate || undefined,
-        colorGrade: colorGrade || undefined,
-        audioSpecs: audioSpecs || undefined,
-        challenges: challenges || undefined,
-        solutions: solutions || undefined,
-        fullDescription: fullDescription || undefined,
+        id: `proj-${Date.now()}`,
+        type: 'video',
+        title: projectTitle,
+        niche: projectNiche,
+        mediaType: projectMediaType,
+        aspectRatio: projectMediaType === 'reel' ? '9:16' : '16:9',
+        link: projectLink,
+        videoUrl: projectLink,
+        thumbnail: projectThumbnail || 'https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800',
+        description: projectDescription,
+        duration: projectDuration,
+        client: projectClient,
+        role: 'Lead Video Editor',
+        software: ['Premiere Pro', 'DaVinci Resolve'],
+        createdAt: '2026',
+        featured: projectFeatured,
       };
-      setProjects([newProj, ...projects]);
-      playSound(800);
-      alert('New project inserted successfully!');
+      updatedList = [newProj, ...projects];
+      showToast('New project created and published!');
     }
 
-    // Reset fields
+    setProjects(updatedList);
     resetProjectForm();
+    playSound(800);
+  };
+
+  const handleEditProject = (p: Project) => {
+    setEditingId(p.id);
+    setProjectTitle(p.title);
+    setProjectNiche(p.niche as NicheType);
+    setProjectMediaType(p.mediaType || (p.aspectRatio === '9:16' ? 'reel' : 'video'));
+    setProjectLink(p.videoUrl || p.link || '');
+    setProjectThumbnail(p.thumbnail || '');
+    setProjectDescription(p.description || '');
+    setProjectDuration(p.duration || '0:45');
+    setProjectClient(p.client || '');
+    setProjectFeatured(Boolean(p.featured));
+    setIsEditingProject(true);
+    playSound(550);
+  };
+
+  const handleDeleteProject = (id: string) => {
+    if (confirm('Are you sure you want to delete this project?')) {
+      const updated = projects.filter((p) => p.id !== id);
+      setProjects(updated);
+      showToast('Project removed.');
+      playSound(300);
+    }
   };
 
   const resetProjectForm = () => {
     setEditingId(null);
-    setTitle('');
-    setSlug('');
-    setLink('');
-    setThumbnail('');
-    setPreviewVideo('');
-    setFullVideo('');
-    setShortDescription('');
-    setDescription('');
-    setDuration('');
-    setRole('');
-    setSoftware('');
-    setCreatedAtYear('2026');
-    setFeatured(false);
-    setOrder(0);
-    setTags('');
-    setStatus('published');
-    setAspectRatio('9:16');
-    setMediaType('reel');
-    setClient('');
-    setResolution('');
-    setFrameRate('');
-    setColorGrade('');
-    setAudioSpecs('');
-    setChallenges('');
-    setSolutions('');
-    setFullDescription('');
+    setProjectTitle('');
+    setProjectNiche('real-estate');
+    setProjectMediaType('reel');
+    setProjectLink('');
+    setProjectThumbnail('');
+    setProjectDescription('');
+    setProjectDuration('0:45');
+    setProjectClient('');
+    setProjectFeatured(false);
+    setIsEditingProject(false);
   };
 
-  const handleEditInit = (p: Project) => {
-    setEditingId(p.id);
-    setTitle(p.title);
-    setSlug(p.slug || '');
-    setType(p.type);
-    setNiche(p.niche);
-    setLink(p.link);
-    setThumbnail(p.thumbnail || p.poster || '');
-    setPreviewVideo(p.previewVideo || '');
-    setFullVideo(p.fullVideo || '');
-    setShortDescription(p.shortDescription || '');
-    setDescription(p.description);
-    setDuration(p.duration || '');
-    setRole(p.role || '');
-    setSoftware(p.software ? p.software.join(', ') : '');
-    setCreatedAtYear(p.createdAt || '2026');
-    setFeatured(p.featured || false);
-    setOrder(p.order || 0);
-    setTags(p.tags ? p.tags.join(', ') : '');
-    setStatus(p.status || 'published');
-    setAspectRatio(p.aspectRatio || '9:16');
-    setMediaType(p.mediaType || (p.aspectRatio === '9:16' ? 'reel' : 'video'));
-    setClient(p.client || '');
-    setResolution(p.resolution || '');
-    setFrameRate(p.frameRate || '');
-    setColorGrade(p.colorGrade || '');
-    setAudioSpecs(p.audioSpecs || '');
-    setChallenges(p.challenges || '');
-    setSolutions(p.solutions || '');
-    setFullDescription(p.fullDescription || '');
-    setActiveTab('projects');
-    playSound(600);
-  };
-
-  const handleTogglePublish = (id: string) => {
-    const updated = projects.map((p) =>
-      p.id === id
-        ? { ...p, status: ((p.status === 'draft' ? 'published' : 'draft') as 'draft' | 'published') }
-        : p
-    );
-    setProjects(updated);
-    playSound(750, 0.08);
-  };
-
-  const handleReorder = (fromIdx: number, toIdx: number) => {
-    if (toIdx < 0 || toIdx >= projects.length) return;
-    const reordered = [...projects];
-    const [moved] = reordered.splice(fromIdx, 1);
-    reordered.splice(toIdx, 0, moved);
-    setProjects(reordered);
-    playSound(550, 0.05);
-  };
-
-  const handleDelete = (id: string) => {
-    if (confirm('Are you sure you want to remove this project?')) {
-      const filtered = projects.filter((p) => p.id !== id);
-      setProjects(filtered);
-      playSound(300, 0.15);
-    }
-  };
-
-  const handleExport = () => {
-    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(projects, null, 2));
-    const dlAnchor = document.createElement('a');
-    dlAnchor.setAttribute('href', dataStr);
-    dlAnchor.setAttribute('download', 'anshay_portfolio_backup.json');
-    dlAnchor.click();
-    playSound(950);
-  };
-
-  const handleAutofillComplete = (data: any, linkUrl: string) => {
-    setTitle(data.title || '');
-    setLink(linkUrl);
-    setThumbnail(data.thumbnail || '');
-    setDescription(data.description || '');
-    setNiche(data.niche || 'normal-edit');
-    setType(data.type || 'video');
-    setAspectRatio(data.aspectRatio || '16:9');
-    setSoftware(data.software ? data.software.join(', ') : '');
-    setDuration(data.duration || '');
-    setRole(data.role || '');
-    setClient(data.client || '');
-    setResolution(data.resolution || '');
-    setFrameRate(data.frameRate || '');
-    setColorGrade(data.colorGrade || '');
-    setAudioSpecs(data.audioSpecs || '');
-    setChallenges(data.challenges || '');
-    setSolutions(data.solutions || '');
-    setFullDescription(data.fullDescription || '');
-    setActiveTab('projects');
-  };
-
-  const handleUpdateProgField = (id: string, field: string, val: string) => {
-    setProgressions(prev => prev.map(p => {
-      if (p.id === id) {
-        const updated = { ...p, [field]: val };
-        if (field === 'label') {
-          updated.niche = val.toLowerCase().replace(/\s+/g, '');
-        }
-        return updated;
+  // Save Pipeline (Cinematic Transformation 4-Stage Videos)
+  const handleUpdatePipelineField = (nicheId: string, stage: 'rawVideo' | 'editVideo' | 'sfxColorVideo' | 'finalVideo', url: string) => {
+    const updated = progressions.map((p) => {
+      if (p.niche === nicheId || p.id === nicheId) {
+        return { ...p, [stage]: url };
       }
       return p;
-    }));
+    });
+    setProgressions(updated);
   };
 
-  // Save General Site Texts
-  const handleSaveSiteContent = async (e: React.FormEvent) => {
-    e.preventDefault();
-    playSound(600);
+  const handleSavePipeline = () => {
+    const newSiteConfig = {
+      ...siteConfig,
+      progressions,
+    };
+    setSiteConfig(newSiteConfig);
+    showToast('Cinematic Pipeline progressions saved!');
+    playSound(850);
+  };
 
-    const updatedConfig = {
+  // Save Profile & Resume
+  const handleSaveProfile = () => {
+    const newSiteConfig = {
+      ...siteConfig,
       hero: {
+        ...(siteConfig?.hero || {}),
+        cvLink,
         statusText: heroStatusText,
-        titleNormal: heroTitleNormal,
-        titleGradient: heroTitleGradient,
-        titleSuffix: heroTitleSuffix,
         description: heroDescription,
-        slotsText: heroSlotsText,
-        cvLink: heroCvLink,
-        metric1Val: heroMetric1Val,
-        metric1Lbl: heroMetric1Lbl,
-        metric2Val: heroMetric2Val,
-        metric2Lbl: heroMetric2Lbl,
-        metric3Val: heroMetric3Val,
-        metric3Lbl: heroMetric3Lbl,
       },
       about: {
-        title: aboutTitle,
-        bioParagraph1: aboutBioParagraph1,
-        bioParagraph2: aboutBioParagraph2,
-        experience: aboutExperience,
-        education: aboutEducation,
-        availability: aboutAvailability,
-        location: aboutLocation,
-        profileImage: aboutProfileImage,
-        locationStamp: aboutLocationStamp,
-        tags: aboutTags ? aboutTags.split(',').map((t) => t.trim()).filter(Boolean) : [],
+        ...(siteConfig?.about || {}),
+        bioParagraph1: aboutBio1,
+        bioParagraph2: aboutBio2,
+        profileImage,
       },
-      contact: {
-        headline: contactHeadline,
-        subheadline: contactSubheadline,
-        email: contactEmail,
-        phone: contactPhone,
-        instagramUrl: contactInstagramUrl,
-        whatsappUrl: contactWhatsappUrl,
-        location: contactLocation,
-      },
-      progressions: progressions,
     };
-
-    setSiteConfig(updatedConfig);
+    setSiteConfig(newSiteConfig);
+    showToast('Profile & Resume information saved!');
+    playSound(850);
   };
 
-  // Save Settings & API key & MongoDB URI
+  // Save Socials
+  const handleSaveSocials = () => {
+    const newSiteConfig = {
+      ...siteConfig,
+      contact: {
+        ...(siteConfig?.contact || {}),
+        instagramUrl,
+        whatsappUrl,
+        email: emailVal,
+        phone: phoneVal,
+        location: locationVal,
+      },
+    };
+    setSiteConfig(newSiteConfig);
+    showToast('Contact channels and social links saved!');
+    playSound(850);
+  };
+
+  // Save Cloud Database Settings
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingApiKey(true);
+    setIsSavingDb(true);
     playSound(600);
 
     try {
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ geminiApiKey, mongoUri })
+        body: JSON.stringify({ mongoUri, geminiApiKey }),
       });
-
-      if (!res.ok) throw new Error('Failed to save settings on server');
       const data = await res.json();
-
-      localStorage.setItem('anshay-gemini-api-key', geminiApiKey);
-      if (mongoUri) {
-        localStorage.setItem('anshay-mongo-uri', mongoUri);
-      }
-      if (data.database) {
-        setDbStatus(data.database);
-      }
+      if (data.database) setDbStatus(data.database);
 
       if (data.mongoStatus && data.mongoStatus.startsWith('error')) {
-        alert(`Settings saved, but MongoDB connection failed:\n${data.mongoStatus}\n\nMake sure to whitelist IP (0.0.0.0/0) in MongoDB Atlas Network Access.`);
+        alert(`MongoDB connection attempt returned an error:\n${data.mongoStatus}\n\nMake sure IP 0.0.0.0/0 is whitelisted in Atlas Network Access.`);
       } else {
-        alert('Settings saved successfully!');
+        showToast('Database configuration connected and saved!');
       }
     } catch (err: any) {
-      alert('Failed to save settings on server: ' + err.message);
+      alert('Failed to save database settings: ' + err.message);
     } finally {
-      setSavingApiKey(false);
+      setIsSavingDb(false);
     }
   };
 
   if (!isOpen) return null;
 
-  return (
-    <div data-lenis-prevent className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/90 backdrop-blur-md overflow-y-auto">
-      <div className="w-full max-w-5xl rounded-2xl border border-zinc-850 bg-[#08080c] shadow-2xl overflow-hidden flex flex-col my-4 sm:my-8 max-h-[92vh] md:max-h-[85vh]">
-        
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-zinc-850 p-4 sm:p-6 bg-zinc-950/60">
-          <div className="flex items-center gap-2">
-            <Sparkles className="w-5 h-5" style={{ color: currentTheme.accentHex }} />
-            <h2 className="font-sans font-black text-base sm:text-lg text-white">Portfolio Command Center</h2>
-          </div>
+  // Login Screen if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="w-full max-w-md bg-[#16181F] border border-white/10 rounded-2xl p-8 shadow-2xl relative text-white"
+        >
           <button
             onClick={onClose}
-            className="p-2 rounded-full border border-zinc-800 text-zinc-400 hover:text-white hover:border-zinc-700 transition-colors cursor-pointer"
+            className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-lg"
           >
-            <X className="w-4 h-4" />
+            <X className="w-5 h-5" />
           </button>
-        </div>
 
-        {/* Auth Gated Screen */}
-        {!isAuthenticated ? (
-          <div className="p-8 flex flex-col items-center justify-center text-center max-w-sm mx-auto my-12">
-            <Lock className="w-12 h-12 text-zinc-700 mb-4 animate-pulse" />
-            <h3 className="text-white font-bold text-base">Security Verification Required</h3>
-            <p className="text-xs text-zinc-400 mt-1 mb-6 leading-relaxed">
-              To verify administrative privileges, enter the passcode.
-            </p>
+          <div className="text-center space-y-4">
+            <div
+              className="w-14 h-14 rounded-2xl mx-auto flex items-center justify-center"
+              style={{ backgroundColor: `${accentColor}15`, border: `1px solid ${accentColor}30` }}
+            >
+              <Lock className="w-7 h-7" style={{ color: accentColor }} />
+            </div>
+            <div>
+              <h3 className="text-xl font-bold font-sans">Anshay Studio Manager</h3>
+              <p className="text-xs text-slate-400 mt-1">Enter your password to unlock the studio control panel</p>
+            </div>
 
-            <form onSubmit={handleAuth} className="flex flex-col gap-3 w-full text-left">
-              <input
-                type="password"
-                placeholder="Enter passcode"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl border border-zinc-800 bg-zinc-950 text-white text-xs font-mono outline-none focus:border-zinc-700"
-                style={{ focusBorderColor: currentTheme.accentHex }}
-              />
+            <form onSubmit={handleLogin} className="space-y-4 text-left">
+              <div>
+                <label className="text-[10px] font-mono uppercase text-slate-400 tracking-wider">Studio Password</label>
+                <input
+                  type="password"
+                  placeholder="Enter password..."
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full mt-1 px-4 py-3 rounded-xl bg-[#0F1116] border border-white/10 text-white font-mono text-sm outline-none focus:border-emerald-400"
+                  autoFocus
+                />
+              </div>
+
               {authError && (
-                <div className="text-[10px] font-mono text-red-500 flex items-center gap-1">
-                  <AlertCircle className="w-3 h-3" />
-                  {authError}
-                </div>
+                <p className="text-xs text-rose-400 font-mono flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5" />
+                  <span>{authError}</span>
+                </p>
               )}
+
               <button
                 type="submit"
-                className="mt-2 py-3 rounded-xl text-xs font-bold font-mono tracking-wider text-black transition-all cursor-pointer hover:brightness-110"
-                style={{ backgroundColor: currentTheme.accentHex }}
+                className="w-full py-3 rounded-xl font-bold font-mono text-xs uppercase tracking-wider text-black transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg"
+                style={{ backgroundColor: accentColor }}
               >
-                UNLOCK SYSTEM
+                Unlock Studio Panel
               </button>
             </form>
           </div>
-        ) : (
-          /* Unlocked Admin Panel Dashboard */
-          <div className="flex flex-col flex-1 min-h-0">
-            
-            {/* Top Navigation Tabs - Horizontally Scrollable on Mobile */}
-            <div className="flex flex-nowrap items-center gap-2 p-3 overflow-x-auto border-b border-zinc-900 bg-zinc-950/40 scrollbar-none">
-              <button
-                onClick={() => { setActiveTab('projects'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
-                style={
-                  activeTab === 'projects'
-                    ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
-                    : { border: '1px solid transparent', color: '#71717a' }
-                }
-              >
-                🎬 PROJECTS TIMELINE
-              </button>
-              <button
-                onClick={() => { setActiveTab('ai-upload'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
-                style={
-                  activeTab === 'ai-upload'
-                    ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
-                    : { border: '1px solid transparent', color: '#71717a' }
-                }
-              >
-                ✨ AI MAGIC AUTOFILL
-              </button>
-              <button
-                onClick={() => { setActiveTab('local-upload'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
-                style={
-                  activeTab === 'local-upload'
-                    ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
-                    : { border: '1px solid transparent', color: '#71717a' }
-                }
-              >
-                📁 UPLOAD VIDEO
-              </button>
-              <button
-                onClick={() => { setActiveTab('site-content'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
-                style={
-                  activeTab === 'site-content'
-                    ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
-                    : { border: '1px solid transparent', color: '#71717a' }
-                }
-              >
-                ✏️ EDIT SITE DETAILS
-              </button>
-              <button
-                onClick={() => { setActiveTab('settings'); playSound(350); }}
-                className={`px-4 py-2 rounded-lg text-[10px] font-mono font-black tracking-wider transition-all cursor-pointer flex-shrink-0 whitespace-nowrap`}
-                style={
-                  activeTab === 'settings'
-                    ? { backgroundColor: `${currentTheme.accentHex}20`, border: `1px solid ${currentTheme.accentHex}`, color: 'white' }
-                    : { border: '1px solid transparent', color: '#71717a' }
-                }
-              >
-                ⚙️ SYSTEM SETTINGS
-              </button>
+        </motion.div>
+      </div>
+    );
+  }
+
+  // Filtered Projects for List View
+  const filteredProjectsList = projects.filter((p) => {
+    if (filterNiche === 'all') return true;
+    return p.niche === filterNiche;
+  });
+
+  const activePipelineProg = progressions.find((p) => p.niche === activePipelineNiche) || progressions[0];
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md">
+      <motion.div
+        initial={{ opacity: 0, scale: 0.98 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.98 }}
+        className="relative w-full max-w-6xl h-[92vh] bg-[#141414] border border-white/10 rounded-2xl shadow-2xl flex flex-col md:flex-row overflow-hidden text-white"
+      >
+        {/* Toast notification */}
+        <AnimatePresence>
+          {saveToast && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-emerald-500 text-black font-mono font-bold text-xs shadow-2xl flex items-center gap-2"
+            >
+              <Check className="w-4 h-4" />
+              <span>{saveToast}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* LEFT SIDEBAR NAVIGATION */}
+        <aside className="w-full md:w-64 border-b md:border-b-0 md:border-r border-white/10 bg-[#161820]/90 p-5 flex flex-col justify-between shrink-0">
+          <div className="space-y-6">
+            {/* Header Brand */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: accentColor }} />
+                <span className="font-sans font-black tracking-wider text-sm uppercase">STUDIO MANAGER</span>
+              </div>
+              <span className="text-[9px] font-mono px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-emerald-400">
+                {dbStatus === 'mongodb' ? 'Cloud Atlas' : 'Flat File'}
+              </span>
             </div>
 
-            {/* Main Content Area */}
-            <div data-lenis-prevent className="p-4 md:p-8 overflow-y-auto flex-1 min-h-0">
-              
-              {/* TAB 1: PROJECTS TIMELINE */}
-              {activeTab === 'projects' && (
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 text-left">
-                  <ProjectForm
-                    editingId={editingId}
-                    title={title}
-                    setTitle={setTitle}
-                    slug={slug}
-                    setSlug={setSlug}
-                    link={link}
-                    setLink={setLink}
-                    type={type}
-                    setType={setType}
-                    mediaType={mediaType}
-                    setMediaType={setMediaType}
-                    niche={niche}
-                    setNiche={setNiche}
-                    aspectRatio={aspectRatio}
-                    setAspectRatio={setAspectRatio}
-                    description={description}
-                    setDescription={setDescription}
-                    shortDescription={shortDescription}
-                    setShortDescription={setShortDescription}
-                    thumbnail={thumbnail}
-                    setThumbnail={setThumbnail}
-                    previewVideo={previewVideo}
-                    setPreviewVideo={setPreviewVideo}
-                    fullVideo={fullVideo}
-                    setFullVideo={setFullVideo}
-                    duration={duration}
-                    setDuration={setDuration}
-                    role={role}
-                    setRole={setRole}
-                    software={software}
-                    setSoftware={setSoftware}
-                    client={client}
-                    setClient={setClient}
-                    createdAt={createdAtYear}
-                    setCreatedAt={setCreatedAtYear}
-                    featured={featured}
-                    setFeatured={setFeatured}
-                    order={order}
-                    setOrder={setOrder}
-                    tags={tags}
-                    setTags={setTags}
-                    status={status}
-                    setStatus={setStatus}
-                    resolution={resolution}
-                    setResolution={setResolution}
-                    frameRate={frameRate}
-                    setFrameRate={setFrameRate}
-                    colorGrade={colorGrade}
-                    setColorGrade={setColorGrade}
-                    audioSpecs={audioSpecs}
-                    setAudioSpecs={setAudioSpecs}
-                    challenges={challenges}
-                    setChallenges={setChallenges}
-                    solutions={solutions}
-                    setSolutions={setSolutions}
-                    fullDescription={fullDescription}
-                    setFullDescription={setFullDescription}
-                    onSubmit={handleSaveProject}
-                    onCancel={resetProjectForm}
-                    currentTheme={currentTheme}
-                    playSound={playSound}
-                    slotNumber={
-                      editingId
-                        ? projects
-                            .filter((p) => p.aspectRatio === aspectRatio)
-                            .findIndex((p) => p.id === editingId) + 1 || 1
-                        : 1
-                    }
-                  />
+            {/* Nav Tabs */}
+            <nav className="flex md:flex-col gap-1.5 overflow-x-auto md:overflow-visible">
+              {[
+                { id: 'projects', label: 'Video Projects', icon: Film, count: projects.length },
+                { id: 'pipeline', label: 'Cinematic Pipeline', icon: Sliders },
+                { id: 'profile', label: 'Profile & Resume', icon: FileText },
+                { id: 'socials', label: 'Socials & Links', icon: Instagram },
+                { id: 'settings', label: 'Cloud Database', icon: Database },
+              ].map((tab) => {
+                const Icon = tab.icon;
+                const isActive = activeTab === tab.id;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setActiveTab(tab.id as any);
+                      playSound(500);
+                    }}
+                    className={`flex items-center justify-between px-3.5 py-2.5 rounded-xl text-xs font-mono transition-all text-left cursor-pointer shrink-0 ${
+                      isActive
+                        ? 'text-black font-bold shadow-md'
+                        : 'text-slate-400 hover:text-white hover:bg-white/5'
+                    }`}
+                    style={{
+                      backgroundColor: isActive ? accentColor : 'transparent',
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="w-4 h-4" />
+                      <span>{tab.label}</span>
+                    </div>
+                    {tab.count !== undefined && (
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${isActive ? 'bg-black/20 text-black' : 'bg-white/10 text-slate-300'}`}>
+                        {tab.count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
 
-                  <ProjectList
-                    projects={projects}
-                    onEditInit={handleEditInit}
-                    onDelete={handleDelete}
-                    onTogglePublish={handleTogglePublish}
-                    onReorder={handleReorder}
-                    onPreview={(p) => setPreviewModalProject(p)}
-                    onResetDefaults={onResetDefaults}
-                    onExport={handleExport}
-                    onAddNew={resetProjectForm}
-                    playSound={playSound}
-                  />
+          {/* Bottom Actions */}
+          <div className="pt-4 border-t border-white/5 flex items-center justify-between">
+            <button
+              onClick={() => {
+                setIsAuthenticated(false);
+                playSound(300);
+              }}
+              className="text-xs text-slate-400 hover:text-white font-mono flex items-center gap-1.5"
+            >
+              <Lock className="w-3.5 h-3.5" />
+              <span>Lock Panel</span>
+            </button>
+            <button
+              onClick={onClose}
+              className="px-3 py-1.5 rounded-lg border border-white/10 text-xs font-mono text-slate-300 hover:text-white hover:bg-white/5"
+            >
+              Exit Studio
+            </button>
+          </div>
+        </aside>
+
+        {/* RIGHT CONTENT WORKSPACE */}
+        <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-[#141414] flex flex-col justify-between">
+          
+          {/* TAB 1: PROJECTS MANAGER */}
+          {activeTab === 'projects' && (
+            <div className="space-y-6">
+              {/* Header Bar */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold font-sans">Portfolio Projects</h2>
+                  <p className="text-xs text-slate-400">Curate and manage your video gallery across the 4 editing niches.</p>
                 </div>
-              )}
-
-              {/* TAB 2: AI MAGIC AUTOFILL */}
-              {activeTab === 'ai-upload' && (
-                <AiAutofill
-                  currentTheme={currentTheme}
-                  soundEnabled={soundEnabled}
-                  playSound={playSound}
-                  geminiApiKey={geminiApiKey}
-                  onAutofillComplete={handleAutofillComplete}
-                />
-              )}
-
-              {/* TAB 3: LOCAL FILE UPLOADER */}
-              {activeTab === 'local-upload' && (
-                <LocalUploader
-                  currentTheme={currentTheme}
-                  soundEnabled={soundEnabled}
-                  playSound={playSound}
-                  onApplyUrl={(url) => {
-                    setLink(url);
-                    alert(`Applied URL path: ${url}`);
-                    setActiveTab('projects');
-                    playSound(700);
+                <button
+                  onClick={() => {
+                    resetProjectForm();
+                    setIsEditingProject(!isEditingProject);
+                    playSound(600);
                   }}
-                />
-              )}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>{isEditingProject ? 'Cancel' : 'Add New Project'}</span>
+                </button>
+              </div>
 
-              {/* TAB 4: EDIT SITE DETAILS */}
-              {activeTab === 'site-content' && (
-                <form onSubmit={handleSaveSiteContent} className="text-left flex flex-col gap-8">
-                  {/* Hero texts config */}
-                  <div className="flex flex-col gap-4 border border-zinc-900 p-6 rounded-xl bg-zinc-950/20">
+              {/* Add / Edit Form Modal / Block */}
+              {isEditingProject && (
+                <form onSubmit={handleSaveProject} className="p-6 rounded-2xl bg-[#1A1D24] border border-white/10 space-y-4 shadow-xl">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-white font-mono flex items-center gap-2">
+                    <Edit2 className="w-4 h-4" style={{ color: accentColor }} />
+                    <span>{editingId ? 'Edit Project' : 'Add New Video Project'}</span>
+                  </h3>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
                     <div>
-                      <h4 className="font-sans font-black text-sm text-white flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: currentTheme.accentHex }} />
-                        Hero Landing Page Text
-                      </h4>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">Edit texts appearing in the top landing view.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Available Pill Text</label>
-                        <input
-                          type="text"
-                          value={heroStatusText}
-                          onChange={(e) => setHeroStatusText(e.target.value)}
-                          className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Slots Notification Text</label>
-                        <input
-                          type="text"
-                          value={heroSlotsText}
-                          onChange={(e) => setHeroSlotsText(e.target.value)}
-                          className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Title Line 1 (Normal)</label>
-                        <input
-                          type="text"
-                          value={heroTitleNormal}
-                          onChange={(e) => setHeroTitleNormal(e.target.value)}
-                          className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Title Line 2 (Gradient)</label>
-                        <input
-                          type="text"
-                          value={heroTitleGradient}
-                          onChange={(e) => setHeroTitleGradient(e.target.value)}
-                          className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Title Line 3 (Suffix)</label>
-                        <input
-                          type="text"
-                          value={heroTitleSuffix}
-                          onChange={(e) => setHeroTitleSuffix(e.target.value)}
-                          className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1 text-xs font-mono">
-                      <label className="text-zinc-500">Hero Subtitle / Pitch Statement</label>
-                      <textarea
-                        rows={2}
-                        value={heroDescription}
-                        onChange={(e) => setHeroDescription(e.target.value)}
-                        className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white resize-none font-sans"
+                      <label className="text-slate-400 uppercase text-[10px]">Project Title *</label>
+                      <input
+                        type="text"
+                        required
+                        placeholder="e.g. Modern Villa Walkthrough"
+                        value={projectTitle}
+                        onChange={(e) => setProjectTitle(e.target.value)}
+                        className="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none focus:border-emerald-400"
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">CV Download URL</label>
-                        <input
-                          type="text"
-                          value={heroCvLink}
-                          onChange={(e) => setHeroCvLink(e.target.value)}
-                          className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white"
-                        />
-                      </div>
-                    </div>
-
-                    {/* Stats metrics */}
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono border-t border-zinc-900/60 pt-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] text-zinc-500">Metric 1 Val</label>
-                          <input type="text" value={heroMetric1Val} onChange={(e) => setHeroMetric1Val(e.target.value)} className="px-2 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] text-zinc-500">Metric 1 Label</label>
-                          <input type="text" value={heroMetric1Lbl} onChange={(e) => setHeroMetric1Lbl(e.target.value)} className="px-2 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] text-zinc-500">Metric 2 Val</label>
-                          <input type="text" value={heroMetric2Val} onChange={(e) => setHeroMetric2Val(e.target.value)} className="px-2 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] text-zinc-500">Metric 2 Label</label>
-                          <input type="text" value={heroMetric2Lbl} onChange={(e) => setHeroMetric2Lbl(e.target.value)} className="px-2 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] text-zinc-500">Metric 3 Val</label>
-                          <input type="text" value={heroMetric3Val} onChange={(e) => setHeroMetric3Val(e.target.value)} className="px-2 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                        </div>
-                        <div className="flex flex-col gap-1">
-                          <label className="text-[9px] text-zinc-500">Metric 3 Label</label>
-                          <input type="text" value={heroMetric3Lbl} onChange={(e) => setHeroMetric3Lbl(e.target.value)} className="px-2 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* About section config */}
-                  <div className="flex flex-col gap-4 border border-zinc-900 p-6 rounded-xl bg-zinc-950/20">
                     <div>
-                      <h4 className="font-sans font-black text-sm text-white flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: currentTheme.accentHex }} />
-                        About Section Content
-                      </h4>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">Manage biography, profile photos, and location tags.</p>
+                      <label className="text-slate-400 uppercase text-[10px]">Editing Niche (4 Focus Niches)</label>
+                      <select
+                        value={projectNiche}
+                        onChange={(e) => setProjectNiche(e.target.value as NicheType)}
+                        className="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none"
+                      >
+                        <option value="real-estate">Real Estate</option>
+                        <option value="ugc">UGC & Direct-Response</option>
+                        <option value="promotional">Promotional Commercial</option>
+                        <option value="educational">Educational / Talking Head</option>
+                      </select>
                     </div>
 
-                    <div className="flex flex-col gap-1.5 text-xs font-mono">
-                      <label className="text-zinc-500">About Title Header</label>
+                    <div>
+                      <label className="text-slate-400 uppercase text-[10px]">Media Format</label>
+                      <div className="grid grid-cols-2 gap-2 mt-1">
+                        <button
+                          type="button"
+                          onClick={() => setProjectMediaType('reel')}
+                          className={`py-2 rounded-xl text-center border cursor-pointer font-sans text-xs ${
+                            projectMediaType === 'reel' ? 'bg-white text-black font-bold border-white' : 'bg-[#12141A] text-slate-400 border-white/10'
+                          }`}
+                        >
+                          9:16 Vertical Reel
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setProjectMediaType('video')}
+                          className={`py-2 rounded-xl text-center border cursor-pointer font-sans text-xs ${
+                            projectMediaType === 'video' ? 'bg-white text-black font-bold border-white' : 'bg-[#12141A] text-slate-400 border-white/10'
+                          }`}
+                        >
+                          16:9 Landscape Video
+                        </button>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="text-slate-400 uppercase text-[10px]">Video Link (YouTube URL or Cloudinary MP4) *</label>
                       <input
-                        type="text"
-                        value={aboutTitle}
-                        onChange={(e) => setAboutTitle(e.target.value)}
-                        className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white"
+                        type="url"
+                        required
+                        placeholder="https://youtu.be/... or https://res.cloudinary.com/..."
+                        value={projectLink}
+                        onChange={(e) => setProjectLink(e.target.value)}
+                        className="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none focus:border-emerald-400"
                       />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Bio Paragraph 1</label>
-                        <textarea
-                          rows={4}
-                          value={aboutBioParagraph1}
-                          onChange={(e) => setAboutBioParagraph1(e.target.value)}
-                          className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white resize-none font-sans"
-                        />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Bio Paragraph 2</label>
-                        <textarea
-                          rows={4}
-                          value={aboutBioParagraph2}
-                          onChange={(e) => setAboutBioParagraph2(e.target.value)}
-                          className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white resize-none font-sans"
-                        />
-                      </div>
+                    <div>
+                      <label className="text-slate-400 uppercase text-[10px]">Custom Thumbnail URL</label>
+                      <input
+                        type="url"
+                        placeholder="https://images.unsplash.com/... or auto-detected"
+                        value={projectThumbnail}
+                        onChange={(e) => setProjectThumbnail(e.target.value)}
+                        className="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none"
+                      />
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Experience Stamp</label>
-                        <input type="text" value={aboutExperience} onChange={(e) => setAboutExperience(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Education Stamp</label>
-                        <input type="text" value={aboutEducation} onChange={(e) => setAboutEducation(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Availability Stamp</label>
-                        <input type="text" value={aboutAvailability} onChange={(e) => setAboutAvailability(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Profile Image URL</label>
-                        <input type="text" value={aboutProfileImage} onChange={(e) => setAboutProfileImage(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Location Stamp Header</label>
-                        <input type="text" value={aboutLocationStamp} onChange={(e) => setAboutLocationStamp(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1 text-xs font-mono">
-                      <label className="text-zinc-500">Skills Tags (Comma-separated)</label>
+                    <div>
+                      <label className="text-slate-400 uppercase text-[10px]">Client / Brand Name</label>
                       <input
                         type="text"
-                        value={aboutTags}
-                        onChange={(e) => setAboutTags(e.target.value)}
-                        className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white"
+                        placeholder="e.g. Prime Estates or Glow Naturals"
+                        value={projectClient}
+                        onChange={(e) => setProjectClient(e.target.value)}
+                        className="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none"
                       />
                     </div>
                   </div>
 
-                  {/* Synced Video Progressions Manager */}
-                  <div className="flex flex-col gap-6 border border-zinc-900 p-6 rounded-xl bg-zinc-950/20">
-                    <div>
-                      <h4 className="font-sans font-black text-sm text-white flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: currentTheme.accentHex }} />
-                        Synced 4-Step Video Progression Categories
-                      </h4>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">Customize the step-by-step video showcases shown in your Before/After tab.</p>
-                    </div>
+                  <div className="text-xs font-mono">
+                    <label className="text-slate-400 uppercase text-[10px]">Short Description</label>
+                    <textarea
+                      rows={2}
+                      placeholder="Brief highlight of the edit pacing, color grading, or metrics..."
+                      value={projectDescription}
+                      onChange={(e) => setProjectDescription(e.target.value)}
+                      className="w-full mt-1 px-3.5 py-2 rounded-xl bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none resize-none"
+                    />
+                  </div>
 
-                    <div className="flex flex-col gap-4">
-                      {progressions.map((prog, idx) => (
-                        <div key={prog.id || idx} className="border border-zinc-900 bg-zinc-950/30 rounded-lg p-4 flex flex-col gap-4 relative">
-                          <div className="flex items-center justify-between border-b border-zinc-900/60 pb-2">
-                            <div className="flex items-center gap-2">
-                              <span className="px-2 py-0.5 rounded bg-zinc-900 text-zinc-400 font-mono text-[9px] uppercase">#{idx + 1} Niche</span>
-                              <input
-                                type="text"
-                                value={prog.label || ''}
-                                onChange={(e) => handleUpdateProgField(prog.id, 'label', e.target.value)}
-                                placeholder="Niche Name (e.g. Talking Head)"
-                                className="font-bold text-white bg-transparent border-b border-transparent hover:border-zinc-800 focus:border-zinc-700 outline-none text-xs px-1"
-                              />
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                if (confirm(`Remove the "${prog.label || 'Niche'}" progression card set?`)) {
-                                  setProgressions(prev => prev.filter(p => p.id !== prog.id));
-                                  playSound(400);
-                                }
-                              }}
-                              className="text-[10px] text-red-400 hover:text-red-300 font-mono cursor-pointer"
-                            >
-                              DELETE
-                            </button>
-                          </div>
+                  <div className="flex items-center justify-between pt-2">
+                    <label className="flex items-center gap-2 cursor-pointer text-xs font-mono text-slate-300">
+                      <input
+                        type="checkbox"
+                        checked={projectFeatured}
+                        onChange={(e) => setProjectFeatured(e.target.checked)}
+                        className="w-4 h-4 rounded accent-emerald-500"
+                      />
+                      <span>Mark as Featured in Hero Showcase</span>
+                    </label>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
-                            <div className="flex flex-col gap-1">
-                              <label className="text-zinc-500">1. Raw Video (YouTube Link)</label>
-                              <input
-                                type="text"
-                                value={prog.rawVideo || ''}
-                                onChange={(e) => handleUpdateProgField(prog.id, 'rawVideo', e.target.value)}
-                                className="px-2.5 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-800 text-[11px]"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-zinc-500">2. Edit Video (YouTube Link)</label>
-                              <input
-                                type="text"
-                                value={prog.editVideo || ''}
-                                onChange={(e) => handleUpdateProgField(prog.id, 'editVideo', e.target.value)}
-                                className="px-2.5 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-800 text-[11px]"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-zinc-500">3. SFX + Color Video (YouTube Link)</label>
-                              <input
-                                type="text"
-                                value={prog.sfxColorVideo || ''}
-                                onChange={(e) => handleUpdateProgField(prog.id, 'sfxColorVideo', e.target.value)}
-                                className="px-2.5 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-800 text-[11px]"
-                              />
-                            </div>
-                            <div className="flex flex-col gap-1">
-                              <label className="text-zinc-500">4. Final Video (YouTube Link)</label>
-                              <input
-                                type="text"
-                                value={prog.finalVideo || ''}
-                                onChange={(e) => handleUpdateProgField(prog.id, 'finalVideo', e.target.value)}
-                                className="px-2.5 py-1.5 rounded bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-800 text-[11px]"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-
+                    <div className="flex items-center gap-2">
                       <button
                         type="button"
-                        onClick={() => {
-                          const newId = 'prog_' + Math.random().toString(36).substr(2, 9);
-                          setProgressions(prev => [
-                            ...prev,
-                            {
-                              id: newId,
-                              niche: 'new-niche',
-                              label: 'New Niche Category',
-                              rawVideo: '',
-                              editVideo: '',
-                              sfxColorVideo: '',
-                              finalVideo: ''
-                            }
-                          ]);
-                          playSound(500);
-                        }}
-                        className="py-2.5 rounded-lg border border-dashed border-zinc-800 hover:border-zinc-700 bg-zinc-950/40 text-zinc-400 hover:text-white font-bold transition-all text-xs font-mono cursor-pointer"
+                        onClick={resetProjectForm}
+                        className="px-4 py-2 rounded-xl text-xs font-mono text-slate-400 hover:text-white"
                       >
-                        + ADD NEW SHOWCASE CATEGORY
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        className="px-5 py-2 rounded-xl font-mono text-xs font-bold uppercase text-black"
+                        style={{ backgroundColor: accentColor }}
+                      >
+                        {editingId ? 'Update Project' : 'Save & Publish'}
                       </button>
                     </div>
                   </div>
-
-                  {/* Contact section config */}
-                  <div className="flex flex-col gap-4 border border-zinc-900 p-6 rounded-xl bg-zinc-950/20">
-                    <div>
-                      <h4 className="font-sans font-black text-sm text-white flex items-center gap-1.5">
-                        <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: currentTheme.accentHex }} />
-                        Contact & Social Information
-                      </h4>
-                      <p className="text-[10px] text-zinc-500 mt-0.5">Control email, telephone, location, and social links.</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Contact Headline</label>
-                        <input type="text" value={contactHeadline} onChange={(e) => setContactHeadline(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Contact Subheadline</label>
-                        <input type="text" value={contactSubheadline} onChange={(e) => setContactSubheadline(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Email Address</label>
-                        <input type="text" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Phone Number</label>
-                        <input type="text" value={contactPhone} onChange={(e) => setContactPhone(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">Instagram Profile Link</label>
-                        <input type="text" value={contactInstagramUrl} onChange={(e) => setContactInstagramUrl(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                      <div className="flex flex-col gap-1">
-                        <label className="text-zinc-500">WhatsApp chat Link</label>
-                        <input type="text" value={contactWhatsappUrl} onChange={(e) => setContactWhatsappUrl(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1 text-xs font-mono">
-                      <label className="text-zinc-500">Business Location</label>
-                      <input type="text" value={contactLocation} onChange={(e) => setContactLocation(e.target.value)} className="px-3 py-2 rounded bg-zinc-950 border border-zinc-900 text-white" />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="py-3 rounded-xl font-bold text-black transition-all cursor-pointer hover:brightness-110"
-                    style={{ backgroundColor: currentTheme.accentHex }}
-                  >
-                    SAVE SITE CONTENT DATA
-                  </button>
                 </form>
               )}
 
-              {/* TAB 5: SYSTEM SETTINGS */}
-              {activeTab === 'settings' && (
-                <div className="max-w-md mx-auto text-left flex flex-col gap-6">
-                  <div>
-                    <p className="text-[9px] font-mono tracking-widest text-zinc-500 uppercase">SYSTEM CONFIG</p>
-                    <h3 className="font-sans font-black text-xl text-white mt-1">Keys & Defaults</h3>
-                    <p className="text-xs text-zinc-400 mt-1 leading-relaxed">
-                      Enter your Gemini API key to enable AI autofill. The key is securely written to `.env` on your workspace server.
-                    </p>
-                  </div>
+              {/* Niche Filter Pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                {['all', 'real-estate', 'ugc', 'promotional', 'educational'].map((n) => (
+                  <button
+                    key={n}
+                    onClick={() => setFilterNiche(n)}
+                    className={`px-3 py-1 rounded-lg text-xs font-mono uppercase transition-colors cursor-pointer ${
+                      filterNiche === n ? 'bg-white text-black font-bold' : 'bg-white/5 text-slate-400 hover:text-white border border-white/10'
+                    }`}
+                  >
+                    {n.replace('-', ' ')}
+                  </button>
+                ))}
+              </div>
 
-                  {/* Database Status Banner */}
-                  <div className={`p-4 rounded-xl border flex flex-col gap-1.5 ${
-                    dbStatus === 'mongodb'
-                      ? 'bg-emerald-950/20 border-emerald-500/40 text-emerald-400'
-                      : 'bg-amber-950/20 border-amber-500/40 text-amber-400'
-                  }`}>
-                    <div className="flex items-center gap-2 font-bold text-xs font-mono">
-                      <span className={`w-2 h-2 rounded-full ${dbStatus === 'mongodb' ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
-                      <span>{dbStatus === 'mongodb' ? 'MONGODB ATLAS CLOUD CONNECTED' : 'LOCAL FILE MODE (TEMPORARY ON HOSTS)'}</span>
+              {/* Projects Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredProjectsList.map((p) => (
+                  <div
+                    key={p.id}
+                    className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 hover:border-white/20 transition-all flex flex-col justify-between gap-3 shadow-md group"
+                  >
+                    <div className="space-y-2">
+                      {/* Thumbnail Preview */}
+                      <div className="relative aspect-video rounded-lg overflow-hidden bg-black border border-white/5">
+                        <img
+                          src={p.thumbnail || 'https://images.unsplash.com/photo-1536240478700-b869070f9279?q=80&w=800'}
+                          alt={p.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <span className="absolute top-2 left-2 px-2 py-0.5 rounded text-[10px] font-mono bg-black/70 backdrop-blur-xs text-white border border-white/10 uppercase">
+                          {p.niche}
+                        </span>
+                        <span className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded text-[9px] font-mono bg-black/70 text-slate-300">
+                          {p.mediaType === 'reel' ? '9:16 Reel' : '16:9 Video'}
+                        </span>
+                      </div>
+
+                      <div>
+                        <h4 className="font-bold text-white text-sm line-clamp-1">{p.title}</h4>
+                        <p className="text-xs text-slate-400 line-clamp-2 mt-1">{p.description}</p>
+                      </div>
                     </div>
-                    <p className="text-[11px] text-zinc-400 leading-relaxed font-sans">
-                      {dbStatus === 'mongodb'
-                        ? 'Your portfolio data is permanently stored in MongoDB Atlas cloud. Restarts or redeployments will NEVER erase your custom videos or links!'
-                        : 'On free cloud hosts (Render / Vercel), local files reset when the server sleeps. Connect your free MongoDB Atlas URI below to permanently store your links.'}
-                    </p>
-                  </div>
 
-                  <form onSubmit={handleSaveSettings} className="flex flex-col gap-4 text-xs font-mono">
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-zinc-400">MONGODB_URI (Permanent Cloud Database)</label>
+                    <div className="pt-2 border-t border-white/5 flex items-center justify-between">
+                      <a
+                        href={p.videoUrl || p.link}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-slate-400 hover:text-white flex items-center gap-1 font-mono"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>View</span>
+                      </a>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => handleEditProject(p)}
+                          className="p-1.5 rounded-lg text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+                          title="Edit"
+                        >
+                          <Edit2 className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteProject(p.id)}
+                          className="p-1.5 rounded-lg text-rose-400 hover:text-rose-300 hover:bg-rose-500/10 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: CINEMATIC PIPELINE (4 STAGES) */}
+          {activeTab === 'pipeline' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold font-sans">Cinematic Transformation Pipeline</h2>
+                  <p className="text-xs text-slate-400">Manage the 4 video compilation stages (Raw, Cut, SFX+Color, Final) for each niche.</p>
+                </div>
+                <button
+                  onClick={handleSavePipeline}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Pipeline</span>
+                </button>
+              </div>
+
+              {/* Niche Selector Tabs */}
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { id: 'real-estate', label: 'Real Estate' },
+                  { id: 'ugc', label: 'UGC' },
+                  { id: 'promotional', label: 'Promotional' },
+                  { id: 'educational', label: 'Educational' },
+                ].map((item) => (
+                  <button
+                    key={item.id}
+                    onClick={() => setActivePipelineNiche(item.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-mono uppercase transition-colors cursor-pointer ${
+                      activePipelineNiche === item.id
+                        ? 'text-black font-bold shadow-md'
+                        : 'bg-white/5 text-slate-400 border border-white/10 hover:text-white'
+                    }`}
+                    style={{
+                      backgroundColor: activePipelineNiche === item.id ? accentColor : undefined,
+                    }}
+                  >
+                    {item.label}
+                  </button>
+                ))}
+              </div>
+
+              {/* 4 Stages URL Inputs */}
+              {activePipelineProg && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {[
+                    { key: 'rawVideo', label: '1. Raw Footage Video URL', placeholder: 'https://youtu.be/... or Cloudinary MP4' },
+                    { key: 'editVideo', label: '2. Cut & Pacing Video URL', placeholder: 'https://youtu.be/... or Cloudinary MP4' },
+                    { key: 'sfxColorVideo', label: '3. SFX + Color Grade URL', placeholder: 'https://youtu.be/... or Cloudinary MP4' },
+                    { key: 'finalVideo', label: '4. Final Master Video URL', placeholder: 'https://youtu.be/... or Cloudinary MP4' },
+                  ].map((field) => (
+                    <div key={field.key} className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 space-y-2">
+                      <label className="text-xs font-mono text-slate-300 font-bold uppercase tracking-wider block">
+                        {field.label}
+                      </label>
                       <input
-                        type="password"
-                        placeholder="mongodb+srv://user:password@cluster0.xxx.mongodb.net/?retryWrites=true&w=majority"
-                        value={mongoUri}
-                        onChange={(e) => setMongoUri(e.target.value)}
-                        className="px-3.5 py-3 rounded-lg bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-700 text-xs"
+                        type="url"
+                        placeholder={field.placeholder}
+                        value={activePipelineProg[field.key] || ''}
+                        onChange={(e) => handleUpdatePipelineField(activePipelineProg.niche, field.key as any, e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-lg bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none focus:border-emerald-400"
                       />
-                      <span className="text-[10px] text-zinc-500 font-sans">
-                        ⚠️ In MongoDB Atlas ➔ Network Access, make sure IP is set to <code className="text-zinc-300">0.0.0.0/0</code> (Allow Access from Anywhere).
+                      <span className="text-[10px] text-slate-500 font-mono block">
+                        Direct video stream or unlisted YouTube link.
                       </span>
                     </div>
-
-                    <div className="flex flex-col gap-1.5">
-                      <label className="text-zinc-400">GEMINI_API_KEY (For AI Autofill)</label>
-                      <input
-                        type="password"
-                        placeholder="Paste your Gemini API key"
-                        value={geminiApiKey}
-                        onChange={(e) => setGeminiApiKey(e.target.value)}
-                        className="px-3.5 py-3 rounded-lg bg-zinc-950 border border-zinc-900 text-white outline-none focus:border-zinc-700 text-xs"
-                      />
-                    </div>
-
-                    <button
-                      type="submit"
-                      disabled={savingApiKey}
-                      className="py-3 rounded-xl font-bold text-black transition-all cursor-pointer hover:brightness-110 disabled:opacity-50"
-                      style={{ backgroundColor: currentTheme.accentHex }}
-                    >
-                      {savingApiKey ? 'SAVING SETTINGS...' : 'SAVE CONFIGURATION'}
-                    </button>
-                  </form>
-
-                  <div className="border-t border-zinc-900 pt-6 mt-4 flex flex-col gap-3">
-                    <span className="text-[10px] text-zinc-500 font-mono uppercase">Danger Zone</span>
-                    <button
-                      onClick={() => {
-                        if (confirm('Are you sure you want to reset all portfolio projects to preloaded defaults? This will erase custom added projects.')) {
-                          onResetDefaults();
-                          playSound(400);
-                          alert('Reset successful!');
-                        }
-                      }}
-                      className="w-full py-2.5 rounded-lg border border-red-950/40 bg-red-950/10 text-red-400 font-bold hover:bg-red-950/30 transition-all cursor-pointer text-xs"
-                    >
-                      Reset Portfolio Content to Defaults
-                    </button>
-                  </div>
+                  ))}
                 </div>
               )}
 
+              {/* Hosting Tip Box */}
+              <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-slate-300 space-y-1">
+                <span className="font-bold text-emerald-400 flex items-center gap-1.5 font-mono">
+                  <Sparkles className="w-4 h-4" />
+                  PERMANENT VIDEO STORAGE TIP
+                </span>
+                <p className="text-[11px] leading-relaxed">
+                  Use <strong>Cloudinary</strong> (free 25GB) or <strong>YouTube unlisted links</strong> for these video URLs. They load instantly with zero buffering and will never be deleted when cloud servers restart!
+                </p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Project Preview Lightbox Modal */}
-        {previewModalProject && (
-          <ProjectViewer
-            project={previewModalProject}
-            onClose={() => setPreviewModalProject(null)}
-            currentTheme={currentTheme}
-            allProjects={projects}
-            onSelectRelated={(p) => setPreviewModalProject(p)}
-          />
-        )}
-      </div>
+          {/* TAB 3: PROFILE & RESUME */}
+          {activeTab === 'profile' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold font-sans">Profile & Resume</h2>
+                  <p className="text-xs text-slate-400">Update your CV link, bio description, and hero headline status.</p>
+                </div>
+                <button
+                  onClick={handleSaveProfile}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Profile</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-mono">
+                {/* Resume URL Field with Test Button */}
+                <div className="md:col-span-2 p-5 rounded-xl bg-[#1A1D24] border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-2">
+                      <FileText className="w-4 h-4" style={{ color: accentColor }} />
+                      <span>Dedicated Resume / CV Document URL *</span>
+                    </label>
+                    <a
+                      href={cvLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-[11px] text-emerald-400 hover:underline flex items-center gap-1"
+                    >
+                      <ExternalLink className="w-3 h-3" />
+                      <span>Test Resume Link</span>
+                    </a>
+                  </div>
+                  <input
+                    type="url"
+                    placeholder="https://drive.google.com/... or Cloudinary PDF link"
+                    value={cvLink}
+                    onChange={(e) => setCvLink(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none focus:border-emerald-400"
+                  />
+                  <p className="text-[10px] text-slate-500 font-sans">
+                    This link is opened when visitors click the &quot;Resume&quot; button in your top navigation or hero section.
+                  </p>
+                </div>
+
+                {/* Hero Status & Bio */}
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-slate-400 uppercase text-[10px]">Hero Status Badge</label>
+                    <input
+                      type="text"
+                      value={heroStatusText}
+                      onChange={(e) => setHeroStatusText(e.target.value)}
+                      placeholder="e.g. Available for Freelance & Commercial Projects"
+                      className="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-[#1A1D24] border border-white/10 text-white font-sans text-xs outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 uppercase text-[10px]">Profile Image URL</label>
+                    <input
+                      type="url"
+                      value={profileImage}
+                      onChange={(e) => setProfileImage(e.target.value)}
+                      placeholder="https://images.unsplash.com/..."
+                      className="w-full mt-1 px-3.5 py-2.5 rounded-xl bg-[#1A1D24] border border-white/10 text-white font-sans text-xs outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-slate-400 uppercase text-[10px]">About Bio Paragraph 1</label>
+                    <textarea
+                      rows={3}
+                      value={aboutBio1}
+                      onChange={(e) => setAboutBio1(e.target.value)}
+                      className="w-full mt-1 px-3.5 py-2 rounded-xl bg-[#1A1D24] border border-white/10 text-white font-sans text-xs outline-none resize-none"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-slate-400 uppercase text-[10px]">About Bio Paragraph 2</label>
+                    <textarea
+                      rows={3}
+                      value={aboutBio2}
+                      onChange={(e) => setAboutBio2(e.target.value)}
+                      className="w-full mt-1 px-3.5 py-2 rounded-xl bg-[#1A1D24] border border-white/10 text-white font-sans text-xs outline-none resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 4: SOCIALS & CHANNELS */}
+          {activeTab === 'socials' && (
+            <div className="space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/10 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold font-sans">Socials & Direct Channels</h2>
+                  <p className="text-xs text-slate-400">Update your official Instagram profile, WhatsApp, and contact email.</p>
+                </div>
+                <button
+                  onClick={handleSaveSocials}
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl text-xs font-mono font-bold uppercase tracking-wider text-black transition-all hover:scale-105 active:scale-95 shadow-lg"
+                  style={{ backgroundColor: accentColor }}
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Channels</span>
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs font-mono">
+                <div className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 space-y-2">
+                  <label className="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-2">
+                    <Instagram className="w-4 h-4 text-pink-400" />
+                    <span>Official Instagram Profile URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={instagramUrl}
+                    onChange={(e) => setInstagramUrl(e.target.value)}
+                    placeholder="https://www.instagram.com/anshay.edit?exln=MWkwdHR1bXllMGJjcg=="
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none focus:border-emerald-400"
+                  />
+                  <span className="text-[10px] text-slate-500 font-sans block">Displays as @anshay.edit across the portfolio.</span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 space-y-2">
+                  <label className="text-slate-300 font-bold uppercase tracking-wider flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                    <span>WhatsApp Contact URL</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={whatsappUrl}
+                    onChange={(e) => setWhatsappUrl(e.target.value)}
+                    placeholder="https://wa.me/8319610243"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none focus:border-emerald-400"
+                  />
+                  <span className="text-[10px] text-slate-500 font-sans block">Used by the Instant Quote Calculator for client leads.</span>
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 space-y-2">
+                  <label className="text-slate-300 font-bold uppercase tracking-wider block">Inquiry Email Address</label>
+                  <input
+                    type="email"
+                    value={emailVal}
+                    onChange={(e) => setEmailVal(e.target.value)}
+                    placeholder="yashubasene@gmail.com"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none"
+                  />
+                </div>
+
+                <div className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 space-y-2">
+                  <label className="text-slate-300 font-bold uppercase tracking-wider block">Phone & WhatsApp Number</label>
+                  <input
+                    type="text"
+                    value={phoneVal}
+                    onChange={(e) => setPhoneVal(e.target.value)}
+                    placeholder="+91 8319610243"
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[#12141A] border border-white/10 text-white font-sans text-xs outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* TAB 5: CLOUD DATABASE & SETTINGS */}
+          {activeTab === 'settings' && (
+            <div className="space-y-6">
+              <div className="border-b border-white/10 pb-4">
+                <h2 className="text-xl font-bold font-sans">Cloud Database (Permanent Data Storage)</h2>
+                <p className="text-xs text-slate-400">Connect MongoDB Atlas to guarantee your edits and projects never reset on hosting reboots.</p>
+              </div>
+
+              <form onSubmit={handleSaveSettings} className="p-6 rounded-2xl bg-[#1A1D24] border border-white/10 space-y-4 shadow-xl">
+                <div className="flex items-center justify-between pb-3 border-b border-white/10">
+                  <div className="flex items-center gap-2">
+                    <Database className="w-5 h-5" style={{ color: accentColor }} />
+                    <span className="font-bold text-sm">MongoDB Atlas Connection</span>
+                  </div>
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-mono font-bold ${
+                      dbStatus === 'mongodb' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                    }`}
+                  >
+                    {dbStatus === 'mongodb' ? 'Connected (Atlas Cloud)' : 'Local File Mode (Will Reset on Free Hosting)'}
+                  </span>
+                </div>
+
+                <div className="space-y-2 text-xs font-mono">
+                  <label className="text-slate-300 uppercase text-[10px]">MongoDB Atlas URI</label>
+                  <input
+                    type="password"
+                    placeholder="mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/?retryWrites=true&w=majority"
+                    value={mongoUri}
+                    onChange={(e) => setMongoUri(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-[#12141A] border border-white/10 text-white font-mono text-xs outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                <div className="space-y-2 text-xs font-mono">
+                  <label className="text-slate-300 uppercase text-[10px]">Gemini API Key (Optional for AI Autofill)</label>
+                  <input
+                    type="password"
+                    placeholder="AIzaSy..."
+                    value={geminiApiKey}
+                    onChange={(e) => setGeminiApiKey(e.target.value)}
+                    className="w-full px-4 py-3 rounded-xl bg-[#12141A] border border-white/10 text-white font-mono text-xs outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                <div className="pt-2 flex items-center justify-between">
+                  <span className="text-[11px] text-slate-400 font-sans">
+                    Free Atlas account setup: 100% free forever cluster.
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={isSavingDb}
+                    className="px-6 py-2.5 rounded-xl font-mono text-xs font-bold uppercase tracking-wider text-black transition-all hover:scale-105 active:scale-95 shadow-lg"
+                    style={{ backgroundColor: accentColor }}
+                  >
+                    {isSavingDb ? 'Testing Connection...' : 'Save & Connect'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
+        </main>
+      </motion.div>
     </div>
   );
 }

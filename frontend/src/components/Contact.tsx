@@ -5,7 +5,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Mail, MessageSquare, Play, CheckCircle, AlertCircle, Copy, Check, Instagram, Youtube, Send } from 'lucide-react';
+import { Mail, MessageSquare, Copy, Check, Instagram, Send } from 'lucide-react';
 import { ThemeColors } from '../types';
 import { usePerformance } from '../motion/performanceManager';
 
@@ -21,7 +21,7 @@ export default function Contact({ currentTheme, soundEnabled, contactConfig }: C
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [service, setService] = useState('Short Form Reel');
+  const [service, setService] = useState('Real Estate Video Walkthrough');
   const [budget, setBudget] = useState('');
   const [message, setMessage] = useState('');
   
@@ -46,11 +46,11 @@ export default function Contact({ currentTheme, soundEnabled, contactConfig }: C
   };
 
   const contactEmailVal = contactConfig?.email || 'yashubasene@gmail.com';
-  const contactPhoneVal = contactConfig?.phone || '+91 83196';
-  const instagramUrlVal = contactConfig?.instagramUrl || 'https://instagram.com/anshay_edits';
+  const contactPhoneVal = contactConfig?.phone || '+91 8319610243';
+  const instagramUrlVal = contactConfig?.instagramUrl || 'https://www.instagram.com/anshay.edit?exln=MWkwdHR1bXllMGJjcg==';
   const whatsappUrlVal = contactConfig?.whatsappUrl || 'https://wa.me/918319610243';
-  const headline = contactConfig?.headline || "Let's Create Together";
-  const subheadline = contactConfig?.subheadline || "Ready to elevate your digital reach with cinematic color grades and scroll-stopping graphics? Send a message and let's talk about your next project!";
+  const headline = contactConfig?.headline || "Start Your Creative Journey";
+  const subheadline = contactConfig?.subheadline || "Ready to elevate your digital reach with cinematic color grades and scroll-stopping cuts? Let's discuss your next project.";
 
   const handleCopyEmail = () => {
     navigator.clipboard.writeText(contactEmailVal);
@@ -76,10 +76,9 @@ export default function Contact({ currentTheme, soundEnabled, contactConfig }: C
       formData.append('service', service);
       formData.append('budget', budget);
       formData.append('message', message);
-      formData.append('_subject', `New Portfolio Inquiry — ${name}`);
+      formData.append('_subject', `New Video Inquiry from ${name}`);
       formData.append('_captcha', 'false');
 
-      // Submit to FormSubmit asynchronously
       const response = await fetch(`https://formsubmit.co/ajax/${contactEmailVal}`, {
         method: 'POST',
         body: formData,
@@ -95,66 +94,56 @@ export default function Contact({ currentTheme, soundEnabled, contactConfig }: C
         throw new Error('Failed to submit form');
       }
     } catch (err) {
-      alert('Form submission failed. Please try messaging directly via WhatsApp instead!');
+      alert('Form submission failed. Please message directly on WhatsApp or Instagram!');
       playSound(200, 0.3);
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const getInstagramHandle = (url: string) => {
-    try {
-      const parts = url.replace(/\/$/, '').split('/');
-      const handle = parts[parts.length - 1];
-      return handle ? `@${handle}` : '@instagram';
-    } catch (e) {
-      return '@instagram';
-    }
-  };
+  const accentColor = currentTheme.accentHex || '#2BEE34';
 
   return (
-    <section id="contact-section" className="relative bg-transparent py-24 border-b border-slate-200/50 overflow-hidden text-left">
-      <div className="absolute inset-x-0 bottom-0 top-0 opacity-20 bg-slate-100 rounded-full filter blur-[150px] pointer-events-none" />
+    <section id="contact-section" className="relative bg-[#141414] py-24 border-b border-white/5 overflow-hidden text-left text-white">
+      <div
+        className="absolute bottom-0 right-0 w-[500px] h-[500px] rounded-full blur-[180px] opacity-15 pointer-events-none"
+        style={{ backgroundColor: accentColor }}
+      />
 
       <div className="max-w-7xl mx-auto px-6 relative z-10 grid grid-cols-1 lg:grid-cols-12 gap-12 items-stretch">
         
-        {/* Left Column: Direct Info Links */}
+        {/* Left Column */}
         <div className="lg:col-span-5 flex flex-col justify-between gap-8">
           <div className="flex flex-col gap-4">
             <p className="text-[10px] font-mono tracking-[4px] text-slate-400 uppercase">
               GET IN TOUCH
             </p>
-            <h2 className="font-sans font-black text-4xl md:text-5xl leading-tight text-slate-900">
-              {headline.includes('Together') ? (
-                <>Let&apos;s Create <span style={{ color: currentTheme.accentHex }}>Together</span></>
-              ) : (
-                headline
-              )}
+            <h2 className="font-impact text-5xl md:text-6xl leading-tight text-white uppercase tracking-wider">
+              Start Your <span className="font-editorial-script italic font-normal lowercase" style={{ color: accentColor }}>Journey</span>
             </h2>
-            <p className="text-slate-600 text-sm max-w-sm leading-relaxed">
+            <p className="text-slate-400 text-sm max-w-sm leading-relaxed">
               {subheadline}
             </p>
           </div>
 
           {/* Social connections stack */}
           <div className="flex flex-col gap-4 max-w-sm">
-            
-            {/* Email copying action box (Solves plaintext harvesting risk) */}
+            {/* Email copying action box */}
             <div
-              className="p-4 rounded-xl glass-card flex items-center justify-between cursor-pointer group hover:bg-white shadow-sm border border-slate-150 transition-colors"
+              className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 flex items-center justify-between cursor-pointer group hover:border-white/20 transition-all shadow-md"
               onClick={handleCopyEmail}
             >
               <div className="flex items-center gap-3">
-                <span className="p-2 rounded bg-purple-500/10">
-                  <Mail className="w-4 h-4 text-purple-600" />
+                <span className="p-2 rounded-lg bg-white/5" style={{ color: accentColor }}>
+                  <Mail className="w-4 h-4" />
                 </span>
                 <div className="text-left">
                   <p className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">SEND EMAIL</p>
-                  <p className="text-xs font-sans font-bold text-slate-900 group-hover:text-purple-600 transition-colors">{contactEmailVal}</p>
+                  <p className="text-xs font-sans font-bold text-white group-hover:text-emerald-300 transition-colors">{contactEmailVal}</p>
                 </div>
               </div>
-              <button className="text-slate-400 group-hover:text-slate-700 p-1.5 rounded transition-colors cursor-pointer">
-                {copied ? <Check className="w-4 h-4 text-emerald-500" /> : <Copy className="w-4 h-4" />}
+              <button className="text-slate-400 group-hover:text-white p-1.5 rounded transition-colors cursor-pointer">
+                {copied ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
             </div>
 
@@ -165,12 +154,12 @@ export default function Contact({ currentTheme, soundEnabled, contactConfig }: C
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => playSound(500)}
-                className="p-4 rounded-xl glass-card hover:bg-white border border-slate-150 shadow-sm hover:shadow-md transition-all flex items-center gap-3"
+                className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 hover:border-white/20 shadow-md transition-all flex items-center gap-3"
               >
-                <MessageSquare className="w-4 h-4 text-emerald-600" />
+                <MessageSquare className="w-4 h-4 text-emerald-400" />
                 <div className="text-left">
                   <p className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">WHATSAPP</p>
-                  <p className="text-xs font-sans font-bold text-slate-900">{contactPhoneVal}</p>
+                  <p className="text-xs font-sans font-bold text-white">{contactPhoneVal}</p>
                 </div>
               </a>
 
@@ -179,24 +168,24 @@ export default function Contact({ currentTheme, soundEnabled, contactConfig }: C
                 target="_blank"
                 rel="noreferrer"
                 onClick={() => playSound(520)}
-                className="p-4 rounded-xl glass-card hover:bg-white border border-slate-150 shadow-sm hover:shadow-md transition-all flex items-center gap-3"
+                className="p-4 rounded-xl bg-[#1A1D24] border border-white/10 hover:border-white/20 shadow-md transition-all flex items-center gap-3"
               >
-                <Instagram className="w-4 h-4 text-pink-600" />
+                <Instagram className="w-4 h-4 text-pink-400" />
                 <div className="text-left">
                   <p className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">INSTAGRAM</p>
-                  <p className="text-xs font-sans font-bold text-slate-900">{getInstagramHandle(instagramUrlVal)}</p>
+                  <p className="text-xs font-sans font-bold text-white">@anshay.edit</p>
                 </div>
               </a>
             </div>
           </div>
 
-          <div className="text-slate-400 font-mono text-[10px] tracking-wider uppercase">
+          <div className="text-slate-500 font-mono text-[10px] tracking-wider uppercase">
             RESPONSE TIME WITHIN 12-24 HOURS
           </div>
         </div>
 
         {/* Right Column: Custom Animated Form */}
-        <div className="lg:col-span-7 glass-card-thick rounded-2xl p-6 md:p-8 flex flex-col justify-center border border-slate-200/50 shadow-md">
+        <div className="lg:col-span-7 bg-[#1A1D24]/80 backdrop-blur-xl rounded-2xl p-6 md:p-8 flex flex-col justify-center border border-white/10 shadow-2xl">
           <AnimatePresence mode="wait">
             {!submitted ? (
               <motion.form
@@ -210,120 +199,95 @@ export default function Contact({ currentTheme, soundEnabled, contactConfig }: C
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {/* Name */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-slate-500 font-bold text-[10px] uppercase tracking-wider">Your Name *</label>
+                    <label className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Your Name *</label>
                     <input
                       type="text"
                       required
                       placeholder="Anshay Basene"
                       value={name}
                       onChange={(e) => setName(e.target.value)}
-                      className="px-4 py-3 rounded-xl text-slate-900 outline-none focus:border-slate-300 font-sans glass-input border border-slate-200"
+                      className="px-4 py-3 rounded-xl text-white outline-none focus:border-emerald-400 font-sans bg-[#12141A] border border-white/10 transition-colors"
                     />
                   </div>
                   {/* Email */}
                   <div className="flex flex-col gap-2">
-                    <label className="text-slate-500 font-bold text-[10px] uppercase tracking-wider">Your Email *</label>
+                    <label className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Your Email *</label>
                     <input
                       type="email"
                       required
-                      placeholder="client@creators.com"
+                      placeholder="client@brand.com"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      className="px-4 py-3 rounded-xl text-slate-900 outline-none focus:border-slate-300 font-sans glass-input border border-slate-200"
+                      className="px-4 py-3 rounded-xl text-white outline-none focus:border-emerald-400 font-sans bg-[#12141A] border border-white/10 transition-colors"
                     />
                   </div>
                 </div>
 
                 {/* Service Selection */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-slate-500 font-bold text-[10px] uppercase tracking-wider">Select Service Area</label>
+                  <label className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Select Service Discipline</label>
                   <select
                     value={service}
                     onChange={(e) => setService(e.target.value)}
-                    className="px-4 py-3 rounded-xl text-slate-900 outline-none font-sans glass-input border border-slate-200 bg-white"
+                    className="px-4 py-3 rounded-xl text-white outline-none font-sans bg-[#12141A] border border-white/10 transition-colors"
                   >
-                    <option className="bg-white text-slate-900">Short Form Reel</option>
-                    <option className="bg-white text-slate-900">Long Form Documentary / Video</option>
-                    <option className="bg-white text-slate-900">Typography Reel</option>
-                    <option className="bg-white text-slate-900">Brand Identity Suite</option>
-                    <option className="bg-white text-slate-900">YouTube Thumbnail Design</option>
-                    <option className="bg-white text-slate-900">Monthly Retainer package</option>
+                    <option className="bg-[#12141A] text-white">Real Estate Video Walkthrough</option>
+                    <option className="bg-[#12141A] text-white">UGC & Direct-Response Video Ad</option>
+                    <option className="bg-[#12141A] text-white">Promotional Commercial / Campaign</option>
+                    <option className="bg-[#12141A] text-white">Educational / Talking-Head Series</option>
+                    <option className="bg-[#12141A] text-white">Monthly Video Editing Retainer</option>
                   </select>
                 </div>
 
-                {/* Budget Range */}
+                {/* Project Details */}
                 <div className="flex flex-col gap-2">
-                  <label className="text-slate-500 font-bold text-[10px] uppercase tracking-wider">Approximate Budget (Optional)</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. ₹5,000 - ₹15,000"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                    className="px-4 py-3 rounded-xl text-slate-900 outline-none focus:border-slate-300 font-sans glass-input border border-slate-200"
-                  />
-                </div>
-
-                {/* Message */}
-                <div className="flex flex-col gap-2">
-                  <label className="text-slate-500 font-bold text-[10px] uppercase tracking-wider">Project Details *</label>
+                  <label className="text-slate-400 font-bold text-[10px] uppercase tracking-wider">Project Scope & Details *</label>
                   <textarea
-                    required
                     rows={4}
-                    placeholder="Tell me about your channel, content style, timeline pacing needs..."
+                    required
+                    placeholder="Tell me about your footage, turnaround deadline, and editing vision..."
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
-                    className="px-4 py-3 rounded-xl text-slate-900 outline-none focus:border-slate-300 resize-none font-sans glass-input border border-slate-200"
+                    className="px-4 py-3 rounded-xl text-white outline-none focus:border-emerald-400 font-sans bg-[#12141A] border border-white/10 transition-colors resize-none"
                   />
                 </div>
 
-                {/* Submit button with loader state */}
+                {/* Submit button */}
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="mt-2 py-4 rounded-xl text-xs font-bold font-mono tracking-widest text-white flex items-center justify-center gap-2 transition-all hover:scale-[1.01] hover:brightness-110 cursor-pointer"
+                  className="w-full py-3.5 rounded-xl text-black font-bold font-mono tracking-wider transition-all hover:scale-[1.01] active:scale-[0.99] shadow-lg flex items-center justify-center gap-2 cursor-pointer uppercase text-xs"
                   style={{
-                    backgroundColor: currentTheme.accentHex,
-                    boxShadow: `0 4px 14px ${currentTheme.glowColor}`,
+                    backgroundColor: accentColor,
+                    boxShadow: `0 4px 20px ${currentTheme.glowColor || 'rgba(43,238,52,0.35)'}`,
                   }}
                 >
-                  {isSubmitting ? (
-                    <>
-                      <span className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
-                      SUBMITTING TRANSMISSION...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="w-4 h-4" />
-                      SEND PROJECT INQUIRY
-                    </>
-                  )}
+                  <Send className="w-4 h-4" />
+                  <span>{isSubmitting ? 'Sending Request...' : 'Send Inquiry Message'}</span>
                 </button>
               </motion.form>
             ) : (
-              /* Success confirmation state in-app */
               <motion.div
-                key="success-screen"
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="py-12 flex flex-col items-center justify-center text-center max-w-sm mx-auto"
+                key="contact-success"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="flex flex-col items-center justify-center p-8 text-center gap-4 text-white"
               >
-                <CheckCircle className={`w-16 h-12 text-emerald-600 mb-4 ${isLiteMode ? '' : 'animate-bounce'}`} />
-                <h3 className="font-sans font-black text-xl text-slate-900">Inquiry Transmitted</h3>
-                <p className="text-slate-600 text-xs font-sans mt-2 mb-6 leading-relaxed">
-                  Thank you, <strong className="text-slate-900">{name}</strong>! Your project brief has been recorded successfully. Anshay will contact you within 12-24 hours.
+                <div
+                  className="w-16 h-16 rounded-2xl flex items-center justify-center"
+                  style={{ backgroundColor: `${accentColor}15`, border: `1px solid ${accentColor}30` }}
+                >
+                  <Check className="w-8 h-8" style={{ color: accentColor }} />
+                </div>
+                <h3 className="text-2xl font-bold font-sans">Message Dispatched!</h3>
+                <p className="text-xs text-slate-400 max-w-sm leading-relaxed">
+                  Thank you, {name}! Your inquiry has been sent to Anshay Basene. You will receive a response within 12–24 hours.
                 </p>
                 <button
-                  onClick={() => {
-                    setSubmittingSuccess(false);
-                    setName('');
-                    setEmail('');
-                    setMessage('');
-                    setBudget('');
-                    playSound(300);
-                  }}
-                  className="px-5 py-2.5 rounded-xl border border-slate-200 text-[10px] font-mono hover:text-slate-900 hover:border-slate-400 transition-colors cursor-pointer"
+                  onClick={() => setSubmittingSuccess(false)}
+                  className="mt-4 px-6 py-2 rounded-xl text-xs font-mono font-bold text-white bg-white/10 border border-white/10 hover:bg-white/15 transition-all"
                 >
-                  SEND ANOTHER BRIEF &lsaquo;
+                  Send Another Inquiry
                 </button>
               </motion.div>
             )}

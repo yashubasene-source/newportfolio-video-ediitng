@@ -357,7 +357,7 @@ export default function BeforeAfter({
   };
 
   return (
-    <section id="transformations-section" className="relative bg-transparent py-24 border-b border-slate-200/50 overflow-hidden">
+    <section id="transformations-section" className="relative bg-[#141414] py-24 border-b border-white/5 overflow-hidden text-white">
       
       {/* 
         Inject player styling to:
@@ -383,11 +383,11 @@ export default function BeforeAfter({
           <p className="text-[10px] font-mono tracking-[4px] text-slate-400 uppercase">
             Editing Pipeline Progression
           </p>
-          <h2 className="font-sans font-black text-4xl md:text-5xl leading-tight text-slate-900">
-            The Cinematic <span style={{ color: currentTheme.accentHex }}>Transformation</span>
+          <h2 className="font-impact text-5xl md:text-6xl tracking-wider text-white uppercase">
+            The Cinematic <span className="font-editorial-script italic font-normal lowercase" style={{ color: currentTheme.accentHex }}>Transformation</span>
           </h2>
-          <p className="text-slate-600 text-sm">
-            Inspect the step-by-step video compilation stages. Play them side-by-side to watch the draft turn into a cinematic masterpiece.
+          <p className="text-slate-400 text-sm">
+            Inspect the step-by-step video compilation stages. Play them side-by-side to watch raw drafts turn into commercial masterpieces.
           </p>
         </div>
 
@@ -403,8 +403,8 @@ export default function BeforeAfter({
                 }}
                 className={`px-4 py-2 rounded-xl text-[10px] font-mono tracking-wider border transition-all cursor-pointer uppercase ${
                   activeNiche === prog.niche
-                    ? 'text-white border-transparent shadow-md'
-                    : 'text-slate-500 border-slate-200 hover:text-slate-900 hover:bg-slate-50 bg-white/50'
+                    ? 'text-black font-bold border-transparent shadow-lg'
+                    : 'text-slate-400 border-white/10 hover:text-white hover:bg-white/5 bg-white/[0.02]'
                 }`}
                 style={{
                   backgroundColor: activeNiche === prog.niche ? currentTheme.accentHex : undefined,
@@ -425,8 +425,8 @@ export default function BeforeAfter({
               
               {/* Step 1: Raw */}
               <div className="flex flex-col items-center gap-3">
-                <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">1. Raw</span>
-                <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-slate-200/60 shadow-xl bg-zinc-950 relative">
+                <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">1. Raw Footage</span>
+                <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black relative">
                   {isVideoFile(activeProg.rawVideo) ? (
                     <video
                       ref={video1Ref}
@@ -449,8 +449,8 @@ export default function BeforeAfter({
 
               {/* Step 2: Edit */}
               <div className="flex flex-col items-center gap-3">
-                <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">2. Edit</span>
-                <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-slate-200/60 shadow-xl bg-zinc-950 relative">
+                <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">2. Cut & Pacing</span>
+                <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black relative">
                   {isVideoFile(activeProg.editVideo) ? (
                     <video
                       ref={video2Ref}
@@ -473,8 +473,8 @@ export default function BeforeAfter({
 
               {/* Step 3: SFX + Color */}
               <div className="flex flex-col items-center gap-3">
-                <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">3. sfx + color</span>
-                <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-slate-200/60 shadow-xl bg-zinc-950 relative">
+                <span className="font-mono text-xs font-bold text-slate-400 uppercase tracking-widest">3. SFX + Color</span>
+                <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border border-white/10 shadow-2xl bg-black relative">
                   {isVideoFile(activeProg.sfxColorVideo) ? (
                     <video
                       ref={video3Ref}
@@ -497,11 +497,11 @@ export default function BeforeAfter({
 
               {/* Step 4: Final */}
               <div className="flex flex-col items-center gap-3">
-                <span className="font-mono text-xs font-bold text-slate-800 uppercase tracking-widest flex items-center gap-1">
-                  4. final
-                  <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+                <span className="font-mono text-xs font-bold text-white uppercase tracking-widest flex items-center gap-1">
+                  4. Final Master
+                  <Sparkles className="w-3.5 h-3.5 animate-pulse" style={{ color: currentTheme.accentHex }} />
                 </span>
-                <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border-2 shadow-xl bg-zinc-950 relative transition-colors duration-500" style={{ borderColor: currentTheme.accentHex }}>
+                <div className="vertical-video-wrapper w-full aspect-[9/16] rounded-2xl overflow-hidden border-2 shadow-2xl bg-black relative transition-colors duration-500" style={{ borderColor: currentTheme.accentHex }}>
                   {isVideoFile(activeProg.finalVideo) ? (
                     <video
                       ref={video4Ref}

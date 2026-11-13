@@ -5,7 +5,7 @@
 
 export type ProjectType = 'video' | 'graphic' | 'motion';
 
-export type NicheType = 'all' | 'fun-edit' | 'daily-edit' | 'motion' | 'normal-edit' | 'typography';
+export type NicheType = 'all' | 'real-estate' | 'ugc' | 'promotional' | 'educational';
 
 export interface Project {
   id: string;

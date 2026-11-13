@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Volume2, VolumeX, ShieldAlert, Settings, Menu, X, Check } from 'lucide-react';
+import { Volume2, VolumeX, ShieldAlert, Settings, Menu, X, Check, FileText } from 'lucide-react';
 import { ThemeColors } from '../types';
 import { usePerformance } from '../motion/performanceManager';
 
@@ -17,6 +17,7 @@ interface NavbarProps {
   themesList: ThemeColors[];
   onOpenAdmin: () => void;
   onOpenReport: () => void;
+  onOpenResume: () => void;
 }
 
 export default function Navbar({
@@ -27,6 +28,7 @@ export default function Navbar({
   themesList,
   onOpenAdmin,
   onOpenReport,
+  onOpenResume,
 }: NavbarProps) {
   const { capabilities, settings } = usePerformance();
   const isLiteMode = capabilities.mode === 'lite' || capabilities.mode === 'reduced';
@@ -67,9 +69,9 @@ export default function Navbar({
 
   const navLinks = [
     { name: 'Work', href: '#work-section' },
-    { name: 'About', href: '#about-section' },
-    { name: 'Skills', href: '#skills-section' },
+    { name: 'Stories', href: '#stories-section' },
     { name: 'Pricing', href: '#pricing-section' },
+    { name: 'About', href: '#about-section' },
     { name: 'Contact', href: '#contact-section' },
   ];
 
@@ -77,7 +79,7 @@ export default function Navbar({
     <header
       className={`fixed top-0 left-0 right-0 z-40 transition-all duration-300 ${
         scrolled
-          ? 'py-3 bg-[#FAF7F2]/80 backdrop-blur-xl border-b border-slate-200/50 shadow-md'
+          ? 'py-3 bg-[#141414]/90 backdrop-blur-xl border-b border-white/10 shadow-2xl'
           : 'py-6 bg-transparent'
       }`}
     >
@@ -86,25 +88,25 @@ export default function Navbar({
         <a
           href="#"
           id="nav-logo-link"
-          className="group flex items-center gap-1 font-sans font-extrabold text-xl tracking-tight text-slate-900 hover:opacity-90 transition-opacity"
+          className="group flex items-center gap-1.5 font-sans font-black text-xl tracking-tight text-white hover:opacity-90 transition-opacity"
           onClick={playClickSound}
         >
-          ANSHAY
+          <span>ANSHAY</span>
           <span
-            className="w-1.5 h-1.5 rounded-full inline-block group-hover:scale-150 transition-transform duration-300"
-            style={{ backgroundColor: currentTheme.accentHex, boxShadow: `0 0 10px ${currentTheme.accentHex}` }}
+            className="w-2 h-2 rounded-full inline-block group-hover:scale-150 transition-transform duration-300"
+            style={{ backgroundColor: currentTheme.accentHex, boxShadow: `0 0 12px ${currentTheme.accentHex}` }}
           />
         </a>
 
         {/* Desktop Links */}
-        <nav className="hidden md:flex items-center gap-8 text-sm font-medium">
+        <nav className="hidden md:flex items-center gap-7 text-sm font-medium">
           {navLinks.map((link) => (
             <a
               key={link.name}
               id={`nav-link-${link.name.toLowerCase()}`}
               href={link.href}
               onClick={playClickSound}
-              className="text-slate-600 hover:text-slate-900 transition-colors py-1 relative group"
+              className="text-slate-300 hover:text-white transition-colors py-1 relative group"
             >
               {link.name}
               <span
@@ -116,19 +118,19 @@ export default function Navbar({
         </nav>
 
         {/* Right Controls */}
-        <div className="hidden md:flex items-center gap-4">
-          {/* Working Report Trigger */}
+        <div className="hidden md:flex items-center gap-3">
+          {/* Dedicated Resume Switch */}
           <button
-            id="nav-report-btn"
+            id="nav-resume-btn"
             onClick={() => {
-              onOpenReport();
+              onOpenResume();
               playClickSound();
             }}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-slate-300 text-slate-700 hover:text-slate-900 hover:border-slate-400 bg-white/50 hover:bg-slate-100 transition-all cursor-pointer"
-            title="View Security & Design Analysis Report"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-white/10 text-slate-200 hover:text-white hover:border-emerald-500/50 bg-white/5 hover:bg-white/10 transition-all cursor-pointer"
+            title="View Resume"
           >
-            <ShieldAlert className="w-3.5 h-3.5" />
-            Audit Report
+            <FileText className="w-3.5 h-3.5" style={{ color: currentTheme.accentHex }} />
+            <span>Resume</span>
           </button>
 
           {/* Theme Tint Switcher */}
@@ -139,11 +141,11 @@ export default function Navbar({
                 setShowThemePicker(!showThemePicker);
                 playClickSound();
               }}
-              className="p-2 rounded-lg border border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-2 rounded-lg border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               title="Custom Accent Tints"
             >
               <div
-                className="w-4 h-4 rounded-full border border-white/20"
+                className="w-3.5 h-3.5 rounded-full border border-white/20"
                 style={{ backgroundColor: currentTheme.accentHex, boxShadow: `0 0 8px ${currentTheme.accentHex}` }}
               />
             </button>
@@ -154,22 +156,22 @@ export default function Navbar({
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                  className="absolute right-0 mt-2 p-3 rounded-xl border border-slate-200 bg-white shadow-xl min-w-[200px] flex flex-col gap-2"
+                  className="absolute right-0 mt-2 p-3 rounded-xl border border-white/10 bg-[#16181F] shadow-2xl min-w-[200px] flex flex-col gap-2 z-50"
                 >
-                  <p className="text-[10px] font-mono text-slate-400 px-1 mb-1">ACCENT THEMES</p>
+                  <p className="text-[10px] font-mono text-slate-400 px-1 mb-1 uppercase tracking-wider">Accent Themes</p>
                   {themesList.map((t) => (
                     <button
                       key={t.id}
                       onClick={() => selectTheme(t)}
                       className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors text-left cursor-pointer ${
-                        currentTheme.id === t.id ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-55'
+                        currentTheme.id === t.id ? 'bg-white/10 text-white font-bold' : 'text-slate-400 hover:text-white hover:bg-white/5'
                       }`}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="w-3 h-3 rounded-full border border-black/10" style={{ backgroundColor: t.accentHex }} />
+                        <span className="w-3 h-3 rounded-full" style={{ backgroundColor: t.accentHex }} />
                         {t.name}
                       </div>
-                      {currentTheme.id === t.id && <Check className="w-3 h-3 text-slate-800" />}
+                      {currentTheme.id === t.id && <Check className="w-3 h-3 text-white" />}
                     </button>
                   ))}
                 </motion.div>
@@ -195,10 +197,10 @@ export default function Navbar({
                 }, 50);
               }
             }}
-            className="p-2 rounded-lg border border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-2 rounded-lg border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             title={soundEnabled ? 'Monitor Sound: ON' : 'Monitor Sound: OFF'}
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
+            {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4 text-slate-500" />}
           </button>
 
           {/* Portfolio Manager Trigger (Admin Panel) */}
@@ -208,8 +210,8 @@ export default function Navbar({
               onOpenAdmin();
               playClickSound();
             }}
-            className="p-2 rounded-lg border border-slate-300 text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors cursor-pointer"
-            title="Portfolio Manager"
+            className="p-2 rounded-lg border border-white/10 text-slate-300 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            title="Portfolio Studio Manager"
           >
             <Settings className="w-4 h-4" />
           </button>
@@ -219,10 +221,10 @@ export default function Navbar({
             id="nav-cta-hire-btn"
             href="#contact-section"
             onClick={playClickSound}
-            className="px-4 py-2 text-xs font-bold tracking-wider rounded-lg text-white transition-all font-mono hover:brightness-110"
+            className="px-4 py-2 text-xs font-bold tracking-wider rounded-lg text-black transition-all font-mono hover:scale-105 active:scale-95 shadow-lg"
             style={{
               backgroundColor: currentTheme.accentHex,
-              boxShadow: `0 4px 14px ${currentTheme.glowColor}`,
+              boxShadow: `0 4px 16px ${currentTheme.glowColor}`,
             }}
           >
             HIRE ME
@@ -231,13 +233,25 @@ export default function Navbar({
 
         {/* Mobile Hamburger / Toggles */}
         <div className="md:hidden flex items-center gap-2">
+          {/* Resume button mobile */}
+          <button
+            onClick={() => {
+              onOpenResume();
+              playClickSound();
+            }}
+            className="px-2.5 py-1.5 rounded-lg border border-white/10 text-xs text-slate-200 bg-white/5 flex items-center gap-1"
+          >
+            <FileText className="w-3.5 h-3.5" style={{ color: currentTheme.accentHex }} />
+            <span>CV</span>
+          </button>
+
           {/* Sound toggle mobile */}
           <button
             id="nav-sound-toggle-mobile"
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className="p-2 rounded-lg border border-slate-300 text-slate-500"
+            className="p-2 rounded-lg border border-white/10 text-slate-400"
           >
-            {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-600" /> : <VolumeX className="w-4 h-4" />}
+            {soundEnabled ? <Volume2 className="w-4 h-4 text-emerald-400" /> : <VolumeX className="w-4 h-4" />}
           </button>
 
           <button
@@ -246,7 +260,7 @@ export default function Navbar({
               setMobileMenuOpen(!mobileMenuOpen);
               playClickSound();
             }}
-            className="p-2 rounded-lg border border-slate-300 text-slate-600 hover:text-slate-900"
+            className="p-2 rounded-lg border border-white/10 text-slate-200 hover:text-white"
           >
             {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
           </button>
@@ -262,7 +276,7 @@ export default function Navbar({
             animate={isLiteMode ? { opacity: 1, scale: 1 } : { opacity: 1, height: 'auto' }}
             exit={isLiteMode ? { opacity: 0, scale: 0.98 } : { opacity: 0, height: 0 }}
             transition={{ duration: settings.duration }}
-            className="md:hidden border-b border-slate-200 bg-[#FAF7F2]/95 backdrop-blur-2xl px-6 py-4 flex flex-col gap-4 shadow-xl"
+            className="md:hidden border-b border-white/10 bg-[#141414]/95 backdrop-blur-2xl px-6 py-5 flex flex-col gap-4 shadow-2xl"
           >
             {navLinks.map((link) => (
               <a
@@ -273,26 +287,25 @@ export default function Navbar({
                   setMobileMenuOpen(false);
                   playClickSound();
                 }}
-                className="text-slate-600 hover:text-slate-900 transition-colors text-sm py-1 font-medium block"
+                className="text-slate-300 hover:text-white transition-colors text-sm py-1 font-medium block"
               >
                 {link.name}
               </a>
             ))}
 
-            <div className="h-px bg-slate-200 my-1" />
+            <div className="h-px bg-white/10 my-1" />
 
-            <div className="flex flex-wrap items-center gap-3">
+            <div className="flex flex-wrap items-center gap-2">
               <button
-                id="mobile-nav-report"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onOpenReport();
+                  onOpenResume();
                   playClickSound();
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-slate-300 text-slate-700 bg-white"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-white/10 text-slate-200 bg-white/5"
               >
-                <ShieldAlert className="w-3.5 h-3.5" />
-                Audit Report
+                <FileText className="w-3.5 h-3.5" style={{ color: currentTheme.accentHex }} />
+                View Resume
               </button>
 
               <button
@@ -302,10 +315,10 @@ export default function Navbar({
                   onOpenAdmin();
                   playClickSound();
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-slate-300 text-slate-700 bg-white"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-mono border border-white/10 text-slate-200 bg-white/5"
               >
                 <Settings className="w-3.5 h-3.5" />
-                Manager Panel
+                Studio Manager
               </button>
             </div>
 
@@ -316,7 +329,7 @@ export default function Navbar({
                 setMobileMenuOpen(false);
                 playClickSound();
               }}
-              className="py-2.5 rounded-lg text-center text-xs font-bold font-mono tracking-wider text-white block hover:brightness-110"
+              className="py-2.5 rounded-lg text-center text-xs font-bold font-mono tracking-wider text-black block hover:brightness-110 shadow-lg"
               style={{ backgroundColor: currentTheme.accentHex }}
             >
               HIRE ANSHAY

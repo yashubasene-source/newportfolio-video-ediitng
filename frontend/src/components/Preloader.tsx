@@ -28,13 +28,12 @@ export default function Preloader({ onComplete, soundEnabled }: PreloaderProps) 
 
       if (type === 'beep') {
         osc.type = 'sine';
-        osc.frequency.setValueAtTime(880, ctx.currentTime); // High pitch beep
+        osc.frequency.setValueAtTime(880, ctx.currentTime);
         gain.gain.setValueAtTime(0.08, ctx.currentTime);
         gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.15);
         osc.start();
         osc.stop(ctx.currentTime + 0.15);
       } else {
-        // Clapper clack sound: noise burst + low frequency pop
         osc.type = 'triangle';
         osc.frequency.setValueAtTime(150, ctx.currentTime);
         gain.gain.setValueAtTime(0.4, ctx.currentTime);
@@ -43,7 +42,7 @@ export default function Preloader({ onComplete, soundEnabled }: PreloaderProps) 
         osc.stop(ctx.currentTime + 0.2);
       }
     } catch (e) {
-      // Audio context block safeties
+      // Audio safety
     }
   };
 
@@ -84,24 +83,25 @@ export default function Preloader({ onComplete, soundEnabled }: PreloaderProps) 
         initial={{ opacity: 1 }}
         exit={{ opacity: 0, y: isLiteMode ? -20 : -40 }}
         transition={{ duration: isLiteMode ? 0.3 : 0.6, ease: 'easeInOut' }}
-        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#06050a] text-white select-none overflow-hidden"
+        className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-[#141414] text-white select-none overflow-hidden"
       >
-        {/* Subtle background radar circles (Only on Balanced/Full) */}
+        {/* Luminous Moss background radar atmosphere */}
         {!isLiteMode && (
-          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-10">
-            <div className="w-[300px] h-[300px] rounded-full border border-purple-500 animate-ping" />
-            <div className="absolute w-[500px] h-[500px] rounded-full border border-purple-900 animate-pulse" />
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-20">
+            <div className="w-[320px] h-[320px] rounded-full border border-[#2BEE34] animate-ping" />
+            <div className="absolute w-[560px] h-[560px] rounded-full border border-[#2BEE34]/40 animate-pulse" />
           </div>
         )}
 
-        {/* Cinematic horizontal slate bar animations */}
+        {/* Top Production Tag */}
         <motion.div
           initial={{ y: -80, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={isLiteMode ? { duration: 0.3 } : { delay: 0.2, type: 'spring', stiffness: 120 }}
-          className="absolute top-12 left-6 font-mono text-[10px] tracking-[4px] text-purple-400 opacity-60"
+          className="absolute top-12 left-8 font-mono text-[10px] tracking-[4px] text-[#2BEE34] opacity-90 flex items-center gap-2"
         >
-          ANSHAY.STUDIOS — SCENE 01 / TAKE 01
+          <span className="w-1.5 h-1.5 rounded-full bg-[#2BEE34] animate-ping" />
+          <span>ANSHAY.STUDIOS — SCENE 01 / TAKE 01</span>
         </motion.div>
 
         {/* Main clapper structure */}
@@ -119,49 +119,49 @@ export default function Preloader({ onComplete, soundEnabled }: PreloaderProps) 
               style={{ originX: 0, originY: 1 }}
               animate={actionTriggered ? { rotate: 0 } : { rotate: -22 }}
               transition={isLiteMode ? { duration: 0.2 } : { type: 'spring', stiffness: 200, damping: 15 }}
-              className="w-64 h-10 border-2 border-zinc-800 bg-zinc-900 flex items-center justify-center relative overflow-hidden rounded-t-lg"
+              className="w-64 h-10 border-2 border-white/20 bg-[#1A1D24] flex items-center justify-center relative overflow-hidden rounded-t-lg shadow-xl"
             >
-              {/* Slanted lines pattern */}
-              <div className="absolute inset-0 opacity-40 bg-[repeating-linear-gradient(-45deg,#27272a,#27272a_10px,#09090b_10px,#09090b_20px)] w-[120%]" />
+              {/* Slanted lines pattern with subtle green glow */}
+              <div className="absolute inset-0 opacity-40 bg-[repeating-linear-gradient(-45deg,#2BEE34_0px,#2BEE34_8px,#141414_8px,#141414_20px)] w-[120%]" />
             </motion.div>
 
             {/* Clapper Body */}
-            <div className="w-64 h-36 border-2 border-t-0 border-zinc-800 bg-zinc-950 rounded-b-lg flex flex-col justify-between p-4 shadow-[0_0_50px_rgba(168,85,247,0.15)] relative">
-              <div className="flex justify-between items-center text-center text-[10px] font-mono text-zinc-500 border-b border-zinc-800/80 pb-2">
+            <div className="w-64 h-36 border-2 border-t-0 border-white/20 bg-[#161820] rounded-b-lg flex flex-col justify-between p-4 shadow-[0_0_50px_rgba(43,238,52,0.18)] relative">
+              <div className="flex justify-between items-center text-center text-[10px] font-mono text-slate-400 border-b border-white/10 pb-2">
                 <div>
-                  <span className="block text-zinc-600">SCENE</span>
+                  <span className="block text-slate-500">SCENE</span>
                   <span className="text-white font-bold tracking-wider">01</span>
                 </div>
-                <div className="h-4 w-px bg-zinc-800" />
+                <div className="h-4 w-px bg-white/10" />
                 <div>
-                  <span className="block text-zinc-600">TAKE</span>
+                  <span className="block text-slate-500">TAKE</span>
                   <span className="text-white font-bold tracking-wider">01</span>
                 </div>
-                <div className="h-4 w-px bg-zinc-800" />
+                <div className="h-4 w-px bg-white/10" />
                 <div>
-                  <span className="block text-zinc-600">ROLL</span>
-                  <span className="text-purple-400 font-bold tracking-wider">2026</span>
+                  <span className="block text-slate-500">ROLL</span>
+                  <span className="text-[#2BEE34] font-bold tracking-wider">2026</span>
                 </div>
               </div>
 
               {/* Title inside clapper */}
               <div className="text-center my-2">
-                <h2 className="font-sans font-extrabold text-sm tracking-wide text-zinc-250">
+                <h2 className="font-impact text-lg tracking-wider text-white uppercase">
                   ANSHAY BASENE
                 </h2>
-                <p className="text-[9px] font-mono tracking-widest text-zinc-500">
-                  PORTFOLIO SHOWCASE
+                <p className="text-[9px] font-mono tracking-widest text-[#2BEE34]">
+                  CINEMATIC EDITING PORTFOLIO
                 </p>
               </div>
 
-              <div className="text-center text-[8px] font-mono text-zinc-600 tracking-wider">
-                BHOPAL, INDIA
+              <div className="text-center text-[8px] font-mono text-slate-500 tracking-wider">
+                BHOPAL, INDIA • 4 FOCUS NICHES
               </div>
             </div>
           </motion.div>
 
           {/* Countdown Numbers and Action Display */}
-          <div className="h-20 flex items-center justify-center overflow-hidden">
+          <div className="h-24 flex items-center justify-center overflow-hidden">
             <AnimatePresence mode="wait">
               {!actionTriggered ? (
                 <motion.div
@@ -170,10 +170,10 @@ export default function Preloader({ onComplete, soundEnabled }: PreloaderProps) 
                   animate={{ y: 0, opacity: 1, scale: 1 }}
                   exit={isLiteMode ? { opacity: 0 } : { y: -30, opacity: 0, scale: 1.5 }}
                   transition={{ duration: 0.35, ease: 'easeOut' }}
-                  className="font-mono text-5xl font-black text-purple-500 tracking-widest flex items-center gap-3 drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]"
+                  className="font-impact text-6xl sm:text-7xl font-black text-[#2BEE34] tracking-widest flex items-center gap-3 drop-shadow-[0_0_25px_rgba(43,238,52,0.7)]"
                 >
-                  <Film className={`w-8 h-8 text-purple-400 ${isLiteMode ? '' : 'animate-spin'}`} />
-                  {countdown}
+                  <Film className={`w-9 h-9 text-[#2BEE34] ${isLiteMode ? '' : 'animate-spin'}`} />
+                  <span>{countdown}</span>
                 </motion.div>
               ) : (
                 <motion.div
@@ -183,11 +183,11 @@ export default function Preloader({ onComplete, soundEnabled }: PreloaderProps) 
                   transition={{ duration: 0.4 }}
                   className="flex flex-col items-center"
                 >
-                  <div className="font-sans font-black text-4xl tracking-[10px] text-emerald-400 drop-shadow-[0_0_20px_rgba(16,185,129,0.6)] flex items-center gap-1">
-                    <Play className="w-8 h-8 fill-emerald-400 text-emerald-400 stroke-0" />
+                  <div className="font-impact text-5xl tracking-[10px] text-[#2BEE34] drop-shadow-[0_0_30px_rgba(43,238,52,0.8)] flex items-center gap-2">
+                    <Play className="w-9 h-9 fill-[#2BEE34] text-[#2BEE34] stroke-0" />
                     ACTION!
                   </div>
-                  <span className="text-[10px] tracking-[4px] font-mono text-emerald-500/80 uppercase mt-1">
+                  <span className="text-[10px] tracking-[4px] font-mono text-[#2BEE34]/90 uppercase mt-1">
                     Loading Timeline
                   </span>
                 </motion.div>
@@ -199,10 +199,10 @@ export default function Preloader({ onComplete, soundEnabled }: PreloaderProps) 
         {/* Skip button in bottom corner */}
         <motion.button
           initial={{ opacity: 0 }}
-          animate={{ opacity: 0.5 }}
+          animate={{ opacity: 0.6 }}
           whileHover={isLiteMode ? {} : { opacity: 1, scale: 1.05 }}
           onClick={handleSkip}
-          className="absolute bottom-10 px-5 py-2 rounded-full border border-zinc-800 text-xs text-zinc-400 font-mono tracking-widest hover:border-purple-500 transition-all duration-350 bg-black/40 backdrop-blur-sm cursor-pointer"
+          className="absolute bottom-10 px-5 py-2 rounded-full border border-white/10 text-xs text-slate-300 font-mono tracking-widest hover:border-[#2BEE34] hover:text-[#2BEE34] transition-all duration-350 bg-black/40 backdrop-blur-sm cursor-pointer shadow-lg"
         >
           SKIP COUNTDOWN &rsaquo;
         </motion.button>
